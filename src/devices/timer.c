@@ -87,11 +87,28 @@ timer_elapsed (int64_t then)
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
 void
-timer_sleep (int64_t ticks) 
+timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
 {
+  /* FROM THE README:
+    Suspends execution of the calling thread until time has advanced by at least 
+    ticks timer ticks. Unless the system is otherwise idle, the thread need not 
+    wake up after exactly x ticks. Just put it on the ready queue after they have 
+    waited for the right amount of time 
+  */
   int64_t start = timer_ticks ();
 
-  ASSERT (intr_get_level () == INTR_ON);
+  ASSERT (intr_get_level () == INTR_ON); // assert that interrupts are on
+
+  /* BEN:
+    * look in src/threads/synch.c to see how the queue for threads is used
+    * threads are either blocked, ready, or running. Thus, we need to block
+    *   a thread until enough time has passed, and then move it to the running
+    *   state
+    * what is the "ready queue"
+    * 
+    * 
+    * 
+  */
   while (timer_elapsed (start) < ticks) 
     thread_yield ();
 }
