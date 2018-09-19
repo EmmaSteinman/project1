@@ -95,23 +95,14 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
     wake up after exactly x ticks. Just put it on the ready queue after they have
     waited for the right amount of time
   */
-  int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON); // assert that interrupts are on
-  wakeAt = start + ticks;       //set wakeAt so thread "sleeps" and will be
-                                //checked by thread_ticks()
-  /* BEN:
-    * look in src/threads/synch.c to see how the queue for threads is used
-    * threads are either blocked, ready, or running. Thus, we need to block
-    *   a thread until enough time has passed, and then move it to the running
-    *   state
-    * what is the "ready queue"
-    *
-    *
-    *
-  */
-  while (timer_elapsed (start) < ticks)
-    thread_yield ();
+
+  struct thread *cur = thread_current();
+  int64_t start = timer_ticks ();
+  cur->wakeAt = start + ticks;       //set wakeAt so thread "sleeps" and will be
+                                      //checked by thread_ticks()
+  // use semaphore here
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be

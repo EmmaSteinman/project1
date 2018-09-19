@@ -125,16 +125,13 @@ thread_tick (void)
 {
   struct thread *t = thread_current ();
   struct list_elem *e;
-  //see list.h to determine how to extract at if statement
-  for (e = list_begin (ready_list); e != list_end (ready_list); e = list_next (e))
+  for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
   {
-    if (e.wakeAt >= 0) //e->something->wakeAt?
+    struct thread *thr = list_entry(e, struct thread, elem);
+    if (thr->wakeAt >= 0 && thr->wakeAt >= timer_ticks()) // thread is asleep AND enough time to wake
     {
-      //check if time to wake
-      if (e.wakeA == timer_ticks()){
-      e.thread_unblock();
-      e.wakeAt = -1;
-    }
+      // TODO: handle unblocking with a semaphore
+      thr->wakeAt = -1; //reset to default 'not sleeping' val
     }
   }
   /* Update statistics. */
