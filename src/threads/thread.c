@@ -127,10 +127,11 @@ thread_tick (void)
   struct list_elem *e;
   for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
   {
-    struct thread *thr = list_entry(e, struct thread, elem);
+    struct thread *thr = list_entry(e, struct thread, allelem); /* see struct thread def for why I used allelem
+                                                                  instead of elem */
     if (thr->wakeAt >= 0 && thr->wakeAt >= timer_ticks()) // thread is asleep AND enough time to wake
     {
-      // TODO: handle unblocking with a semaphore
+      sema_up(thr->wakeAt);
       thr->wakeAt = -1; //reset to default 'not sleeping' val
     }
   }
