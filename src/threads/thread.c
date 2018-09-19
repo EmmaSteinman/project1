@@ -123,18 +123,21 @@ thread_start (void)
 void
 thread_tick (void)
 {
-  struct thread *t = thread_current ();
   struct list_elem *e;
   for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
   {
+    
     struct thread *thr = list_entry(e, struct thread, allelem); /* see struct thread def for why I used allelem
                                                                   instead of elem */
     if (thr->wakeAt >= 0 && thr->wakeAt >= timer_ticks()) // thread is asleep AND enough time to wake
     {
-      sema_up(thr->wakeAt);
+      printf("\n\n\n thr = %p, wakeAt = %lli, timer_ticks() = %lli \n\n\n", thr, thr->wakeAt,timer_ticks());
+      //ASSERT(false);
+      sema_up(thr->sleepSema);
       thr->wakeAt = -1; //reset to default 'not sleeping' val
     }
   }
+  struct thread *t = thread_current ();
   /* Update statistics. */
   if (t == idle_thread)
     idle_ticks++;

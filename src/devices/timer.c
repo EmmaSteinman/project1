@@ -105,6 +105,8 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
                                       //checked by thread_ticks()
   // use semaphore here
   cur->sleepSema = malloc(sizeof(struct semaphore));
+  ASSERT(cur->sleepSema != NULL); //trust nobody
+  
   sema_init(cur->sleepSema, 1);
   sema_down(cur->sleepSema); // calling thread is blocked now, we'll come back when time is up
 }
