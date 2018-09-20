@@ -7,6 +7,8 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include "threads/malloc.h"
+#include "threads/thread.c"
 
 /* See [8254] for hardware details of the 8254 timer chip. */
 
