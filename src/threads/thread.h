@@ -94,9 +94,9 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-
+    struct list_elem sleepingelem;
     struct semaphore *sleepSema;        /* Used exclusively for blocking/unblocking
-                                          a sleeping thread */ 
+                                          a sleeping thread */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

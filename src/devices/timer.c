@@ -97,8 +97,8 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
   */
 
   ASSERT (intr_get_level () == INTR_ON); // assert that interrupts are on
-  
-  
+
+
   struct thread *cur = thread_current();
   int64_t start = timer_ticks ();
   cur->wakeAt = start + ticks;       //set wakeAt so thread "sleeps" and will be
@@ -106,9 +106,10 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
   // use semaphore here
   cur->sleepSema = malloc(sizeof(struct semaphore));
   ASSERT(cur->sleepSema != NULL); //trust nobody
-  
-  sema_init(cur->sleepSema, 1);
+
+  sema_init(cur->sleepSema, 0); //pushes thread back and decrement
   sema_down(cur->sleepSema); // calling thread is blocked now, we'll come back when time is up
+  list_push_back(&sleeping_list, &cur->sleepingelem); //adds thread to sleeping list
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be

@@ -5,12 +5,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "threads/flags.h"
+#include "threads/malloc.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
 #include "threads/palloc.h"
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "devices/timer.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -19,7 +21,10 @@
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
-
+/* List of all sleeping processes. Processes are added to this list
+when they call timer_sleep and removed when the appropriate number of
+ticks have passed */
+static struct list sleeping_list;
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
@@ -124,17 +129,21 @@ void
 thread_tick (void)
 {
   struct list_elem *e;
-  for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
+  // only checks through threads that are sleeeping
+
+  for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
   {
-    
-    struct thread *thr = list_entry(e, struct thread, allelem); /* see struct thread def for why I used allelem
+
+    struct thread *thr = list_entry(e, struct thread, sleepingelem); /* see struct thread def for why I used allelem
                                                                   instead of elem */
-    if (thr->wakeAt >= 0 && thr->wakeAt >= timer_ticks()) // thread is asleep AND enough time to wake
+    if (thr->wakeAt >= 0 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
     {
       printf("\n\n\n thr = %p, wakeAt = %lli, timer_ticks() = %lli \n\n\n", thr, thr->wakeAt,timer_ticks());
       //ASSERT(false);
       sema_up(thr->sleepSema);
+      free(thr->sleepSema);
       thr->wakeAt = -1; //reset to default 'not sleeping' val
+      list_remove(e);     //remove thread
     }
   }
   struct thread *t = thread_current ();
