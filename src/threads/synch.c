@@ -74,7 +74,6 @@ sema_down (struct semaphore *sema)
   sema->value--;
   intr_set_level (old_level);
 }
-
 /* Down or "P" operation on a semaphore, but only if the
    semaphore is not already 0.  Returns true if the semaphore is
    decremented, false otherwise.

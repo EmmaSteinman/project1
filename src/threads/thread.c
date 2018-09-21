@@ -102,7 +102,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-  //list_init (&sleeping_list);
+  list_init (&sleeping_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -134,24 +134,29 @@ void
 thread_tick (void)
 {
   struct list_elem *e;
-  // only checks through threads that are sleeeping
-
-  // for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
-  // {
-
-  //   struct thread *thr = list_entry(e, struct thread, sleepingelem); /* see struct thread def for why I used allelem
-  //                                                                 instead of elem */
-  //   if (thr->wakeAt >= 0 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
-  //   {
-  //     if(!thr->sleepSema)
-  //       printf("\n\n\n thr = %p, wakeAt = %lli, timer_ticks() = %lli \n\n\n", thr, thr->wakeAt,timer_ticks());
-  //     //ASSERT(false);
-  //     sema_up(thr->sleepSema);
-  //     free(thr->sleepSema);
-  //     thr->wakeAt = -1; //reset to default 'not sleeping' val
-  //     list_remove(e);     //remove thread
-  //   }
-  // }
+  for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
+  {
+    struct thread *thr = list_entry(e, struct thread, sleepingelem); /* see struct thread def for why I used allelem
+                                                                  instead of elem */
+    if (thr->wakeAt >= 0 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
+    {
+      //ASSERT(false);
+      if(!thr->sleepSema)
+      {
+        //printf("\n\n\n thr = %p, wakeAt = %lli, timer_ticks() = %lli \n\n\n", thr, thr->wakeAt,timer_ticks());
+        //ASSERT(false);
+      }
+      //ASSERT(false);
+      printf("\n\n\n thr = %p, wakeAt = %lli, timer_ticks() = %lli \n\n\n", thr, thr->wakeAt,timer_ticks());
+      thr->wakeAt = -1; //reset to default 'not sleeping' val
+      list_remove(e);     //remove thread
+      //ASSERT(false == true);
+      sema_up(thr->sleepSema);
+      //ASSERT(false == !false);
+      free(thr->sleepSema);
+      ASSERT(false); // 9/21/18 2:29 pm doesn't get to this b/c ASSERT(!intr_context()) fails in lock_acquire()
+    }
+  }
   struct thread *t = thread_current ();
   /* Update statistics. */
   if (t == idle_thread)
