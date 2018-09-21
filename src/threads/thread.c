@@ -27,7 +27,8 @@ when they call timer_sleep and removed when the appropriate number of
 ticks have passed.
    Drop the static keyword because we need to use this in timer.c
    */
-extern struct list sleeping_list;
+//extern struct list sleeping_list;
+struct list sleeping_list;
 
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
@@ -101,14 +102,13 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-  list_init (&sleeping_list);
+  //list_init (&sleeping_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
-  initial_thread->wakeAt = -1;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -136,21 +136,22 @@ thread_tick (void)
   struct list_elem *e;
   // only checks through threads that are sleeeping
 
-  for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
-  {
+  // for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
+  // {
 
-    struct thread *thr = list_entry(e, struct thread, sleepingelem); /* see struct thread def for why I used allelem
-                                                                  instead of elem */
-    if (thr->wakeAt >= 0 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
-    {
-      printf("\n\n\n thr = %p, wakeAt = %lli, timer_ticks() = %lli \n\n\n", thr, thr->wakeAt,timer_ticks());
-      //ASSERT(false);
-      sema_up(thr->sleepSema);
-      free(thr->sleepSema);
-      thr->wakeAt = -1; //reset to default 'not sleeping' val
-      list_remove(e);     //remove thread
-    }
-  }
+  //   struct thread *thr = list_entry(e, struct thread, sleepingelem); /* see struct thread def for why I used allelem
+  //                                                                 instead of elem */
+  //   if (thr->wakeAt >= 0 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
+  //   {
+  //     if(!thr->sleepSema)
+  //       printf("\n\n\n thr = %p, wakeAt = %lli, timer_ticks() = %lli \n\n\n", thr, thr->wakeAt,timer_ticks());
+  //     //ASSERT(false);
+  //     sema_up(thr->sleepSema);
+  //     free(thr->sleepSema);
+  //     thr->wakeAt = -1; //reset to default 'not sleeping' val
+  //     list_remove(e);     //remove thread
+  //   }
+  // }
   struct thread *t = thread_current ();
   /* Update statistics. */
   if (t == idle_thread)
