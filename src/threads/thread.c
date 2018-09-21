@@ -21,10 +21,14 @@
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
+
 /* List of all sleeping processes. Processes are added to this list
 when they call timer_sleep and removed when the appropriate number of
-ticks have passed */
-static struct list sleeping_list;
+ticks have passed.
+   Drop the static keyword because we need to use this in timer.c
+   */
+extern struct list sleeping_list;
+
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
@@ -97,6 +101,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&sleeping_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
