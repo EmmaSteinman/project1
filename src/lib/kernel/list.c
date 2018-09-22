@@ -216,6 +216,14 @@ list_push_front (struct list *list, struct list_elem *elem)
 void
 list_push_back (struct list *list, struct list_elem *elem)
 {
+  // if list == &ready_list, we care.
+  //    if priority of thread containing elem > priority of currently thread,
+  //    schedule the thread containing elem (Eercise 1.2.1)
+  //    ** I'm not sure if this is where we want to do it. there are two places
+  //        in thread.c where list_push_back is called on read_list, so we could
+  //        employ code there as well. One (implicit) disadvantage of adding it 
+  //        here is that read_list can no longer be static, that is it will be 
+  //		accessible outside of thread.c. (I don't know if this is bad)
   list_insert (list_end (list), elem);
 }
 
