@@ -133,23 +133,7 @@ thread_start (void)
 void
 thread_tick (void)
 {  
-  if ( thread_ticks % TIME_SLICE == 0)
-  { /* if mod = 0*/
-    struct list_elem *e;
-    for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
-    {
-      struct thread *thr = list_entry(e, struct thread, sleepingelem);
-
-      if (thr->wakeAt >= 0 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
-      {
-
-        thr->wakeAt = -1; //reset to default 'not sleeping' val
-        list_remove(e);     //remove thread
-        sema_up(thr->sleepSema);
-
-      }
-    }
-  }
+  
   struct thread *t = thread_current ();
   /* Update statistics. */
   if (t == idle_thread)
@@ -160,6 +144,11 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
+
+  // Putting the threads_wake() call in the bottom if statement breaks
+  // everything... for some reason (???????) --> Ask Dr. B
+  if(timer_ticks() % TIME_SLICE == 0)
+    threads_wake();
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
@@ -605,6 +594,23 @@ allocate_tid (void)
   lock_release (&tid_lock);
 
   return tid;
+}
+
+/* Checks all sleeping threads, wakes (unblocks) them accordingly */
+void
+threads_wake(void)
+{
+  struct list_elem *e;
+  for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
+  {
+    struct thread *thr = list_entry(e, struct thread, sleepingelem);
+    if (thr->wakeAt >= 0 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
+    {
+      thr->wakeAt = -1; //reset to default 'not sleeping' val
+      list_remove(e);     // update our sleeping list
+      sema_up(thr->sleepSema); // free sema to save space; we'll reallocate if thr sleeps again
+    }
+  }
 }
 
 /* Offset of `stack' member within `struct thread'.
