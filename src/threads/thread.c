@@ -147,12 +147,12 @@ thread_tick (void)
 
   // Putting the threads_wake() call in the bottom if statement breaks
   // everything... for some reason (???????) --> Ask Dr. B
-  if(timer_ticks() % TIME_SLICE == 0)
+  if(thread_ticks % TIME_SLICE == 0)
     threads_wake();
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
-    intr_yield_on_return ();
+    intr_yield_on_return (); //asserts its an external interrupt, sets yield on ret flag to true
 }
 
 /* Prints thread statistics. */
