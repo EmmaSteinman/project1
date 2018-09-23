@@ -1,5 +1,6 @@
 #include "list.h"
 #include "../debug.h"
+#include "../../threads/thread.h"
 
 /* Our doubly linked lists have two header elements: the "head"
    just before the first element and the "tail" just after the
@@ -30,6 +31,8 @@
    without sacrificing this simplicity.  But using two separate
    elements allows us to do a little bit of checking on some
    operations, which can be valuable.) */
+
+extern struct list ready_list;
 
 static bool is_sorted (struct list_elem *a, struct list_elem *b,
                        list_less_func *less, void *aux) UNUSED;
@@ -224,7 +227,28 @@ list_push_back (struct list *list, struct list_elem *elem)
   //        employ code there as well. One (implicit) disadvantage of adding it 
   //        here is that read_list can no longer be static, that is it will be 
   //		accessible outside of thread.c. (I don't know if this is bad)
-  list_insert (list_end (list), elem);
+  if (list == &ready_list)
+  {
+    struct thread *readyThr = list_entry(elem, struct thread, elem);
+    struct thread *runningThr = thread_current();
+    int readyPriority = readyThr->priority;
+    int runningPriority = runningThr->priority;
+    if (readyPriority > runningPriority) 
+    {
+      // make running ready, make ready running
+      // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      // HOW TO DO THIS? we do not know
+      
+    } 
+    else
+    {
+      list_insert (list_end (list), elem);
+    }
+  }
+  else
+  {
+    list_insert (list_end (list), elem);
+  }
 }
 
 /* Removes ELEM from its list and returns the element that
