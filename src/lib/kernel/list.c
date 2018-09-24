@@ -237,8 +237,19 @@ list_push_back (struct list *list, struct list_elem *elem)
     {
       // make running ready, make ready running
       // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      // HOW TO DO THIS? we do not know
-      
+      // HOW TO DO THIS? 
+      /* I think the idea is :
+       * push the ready thread into the ready_list
+       * make sure it ends up at the front of ready_list
+       *    (it'll be the first one out by the current 
+       *    FIFO standard)
+       * call thread_yield() which will yield the current
+       *    thread and get it in the ready list
+       * I think it's OK for schedule to be called twice,
+       *    (once explicitly by us and once implicitly by
+       *    thread_yield()) but I'm not sure so lets run 
+       *    this by Dr. B
+      */
     } 
     else
     {

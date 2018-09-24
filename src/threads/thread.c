@@ -147,6 +147,14 @@ thread_tick (void)
 
   // Putting the threads_wake() call in the bottom if statement breaks
   // everything... for some reason (???????) --> Ask Dr. B
+  // we could throw this in schedule() I think? right before all the code that's there?
+  // Ask Dr B. This:
+  /* Since the second part of the project asks us to "immediately yield the processor 
+   to the new thread." in the case of mismatched priority, would moving this wake up check
+   to schedule() be technically incorrect (for cases where the thread to be pushed back
+   has the higher priority), as our code to yield the processor to a new thread
+   (assuming it stays in list_push_back, or somewhere close) wouldn't be called untile schedule()
+   is called (ie not as immediate as it could be) */
   if(thread_ticks % TIME_SLICE == 0)
     threads_wake();
 
