@@ -32,7 +32,7 @@
    elements allows us to do a little bit of checking on some
    operations, which can be valuable.) */
 
-extern struct list ready_list;
+
 
 static bool is_sorted (struct list_elem *a, struct list_elem *b,
                        list_less_func *less, void *aux) UNUSED;
@@ -227,7 +227,7 @@ list_push_back (struct list *list, struct list_elem *elem)
   //        employ code there as well. One (implicit) disadvantage of adding it 
   //        here is that read_list can no longer be static, that is it will be 
   //		accessible outside of thread.c. (I don't know if this is bad)
-  if (list == &ready_list)
+  /*if (list == &ready_list)
   {
     struct thread *readyThr = list_entry(elem, struct thread, elem);
     struct thread *runningThr = thread_current();
@@ -238,7 +238,7 @@ list_push_back (struct list *list, struct list_elem *elem)
       // make running ready, make ready running
       // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       // HOW TO DO THIS? 
-      /* I think the idea is :
+      I think the idea is :
        * push the ready thread into the ready_list
        * make sure it ends up at the front of ready_list
        *    (it'll be the first one out by the current 
@@ -249,17 +249,15 @@ list_push_back (struct list *list, struct list_elem *elem)
        *    (once explicitly by us and once implicitly by
        *    thread_yield()) but I'm not sure so lets run 
        *    this by Dr. B
-      */
+      
     } 
     else
     {
       list_insert (list_end (list), elem);
     }
   }
-  else
-  {
-    list_insert (list_end (list), elem);
-  }
+  */
+  list_insert (list_end (list), elem);
 }
 
 /* Removes ELEM from its list and returns the element that
@@ -482,6 +480,14 @@ list_sort (struct list *list, list_less_func *less, void *aux)
   ASSERT (is_sorted (list_begin (list), list_end (list), less, aux));
 }
 
+bool less_by_priority(const struct list_elem *a,
+                             const struct list_elem *b,
+                             void *aux)
+{
+   struct thread *threadA = list_entry(a, struct thread, elem);
+   struct thread *threadB = list_entry(b, struct thread, elem);
+   return (threadA->priority < threadB->priority);
+}
 /* Inserts ELEM in the proper position in LIST, which must be
    sorted according to LESS given auxiliary data AUX.
    Runs in O(n) average case in the number of elements in LIST. */

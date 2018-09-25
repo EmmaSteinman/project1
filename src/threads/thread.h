@@ -146,4 +146,5 @@ int thread_get_load_avg (void);
 
 void threads_wake(void);
 
+bool is_higher_priority(struct thread*);
 #endif /* threads/thread.h */

@@ -32,7 +32,7 @@ struct list sleeping_list;
 
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
-struct list ready_list;
+static struct list ready_list;
 
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
@@ -80,6 +80,9 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
+bool is_higher_priority(struct thread*);
+void yield_to_ready_thread(struct thread*);
+
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -144,7 +147,6 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
-
   // Putting the threads_wake() call in the bottom if statement breaks
   // everything... for some reason (???????) --> Ask Dr. B
   // we could throw this in schedule() I think? right before all the code that's there?
@@ -155,9 +157,8 @@ thread_tick (void)
    has the higher priority), as our code to yield the processor to a new thread
    (assuming it stays in list_push_back, or somewhere close) wouldn't be called untile schedule()
    is called (ie not as immediate as it could be) */
-  if(thread_ticks % TIME_SLICE == 0)
+  if(thread_ticks% TIME_SLICE == 0)
     threads_wake();
-
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return (); //asserts its an external interrupt, sets yield on ret flag to true
@@ -244,6 +245,22 @@ thread_block (void)
   schedule ();
 }
 
+bool 
+is_higher_priority(struct thread* readyThr)
+{
+    struct thread *runningThr = thread_current();
+    return(readyThr->priority > runningThr->priority);
+}
+
+void yield_to_ready_thread(struct thread* readyThr)
+{
+  // schedule the ready thread 
+  // call schedule
+  // yield the running thread (be careful cause interrupt handler isn't the running thread)
+  list_insert_ordered (&ready_list, &readyThr->elem, less_by_priority,NULL);
+  schedule();
+}
+
 /* Transitions a blocked thread T to the ready-to-run state.
    This is an error if T is not blocked.  (Use thread_yield() to
    make the running thread ready.)
@@ -261,7 +278,12 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  if (is_higher_priority(t))
+  {
+    yield_to_ready_thread(t);
+    return;
+  }
+  list_push_back (&ready_list, &t->elem); //
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -331,8 +353,16 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
+  
   if (cur != idle_thread)
-    list_push_back (&ready_list, &cur->elem);
+  {
+    if (is_higher_priority(cur))
+    {
+      yield_to_ready_thread(cur);
+      
+    }
+    list_push_back (&ready_list, &cur->elem); //
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
