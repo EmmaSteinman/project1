@@ -480,13 +480,17 @@ list_sort (struct list *list, list_less_func *less, void *aux)
   ASSERT (is_sorted (list_begin (list), list_end (list), less, aux));
 }
 
-bool less_by_priority(const struct list_elem *a,
+/* Check two thread list elements by comparing their respective priorities
+   using the list_entry mask.
+*/
+bool greater_by_priority(const struct list_elem *a,
                              const struct list_elem *b,
-                             void *aux)
+                             void *ignore)
 {
-   struct thread *threadA = list_entry(a, struct thread, elem);
-   struct thread *threadB = list_entry(b, struct thread, elem);
-   return (threadA->priority < threadB->priority);
+  ignore = NULL;  //testing for warnings
+  struct thread *threadA = list_entry(a, struct thread, elem);
+  struct thread *threadB = list_entry(b, struct thread, elem);
+  return (threadA->priority >= threadB->priority);
 }
 /* Inserts ELEM in the proper position in LIST, which must be
    sorted according to LESS given auxiliary data AUX.

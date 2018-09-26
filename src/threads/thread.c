@@ -80,8 +80,7 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
-bool is_higher_priority(struct thread*);
-void yield_to_ready_thread(struct thread*);
+bool greatest_priority(struct thread*);
 
 
 /* Initializes the threading system by transforming the code
@@ -246,20 +245,12 @@ thread_block (void)
 }
 
 bool 
-is_higher_priority(struct thread* readyThr)
+greatest_priority(struct thread* checkedThr)
 {
-    struct thread *runningThr = thread_current();
-    return(readyThr->priority > runningThr->priority);
+    struct thread *currentThr = thread_current ();
+    return(checkedThr->priority > currentThr->priority);
 }
 
-void yield_to_ready_thread(struct thread* readyThr)
-{
-  // schedule the ready thread 
-  // call schedule
-  // yield the running thread (be careful cause interrupt handler isn't the running thread)
-  list_insert_ordered (&ready_list, &readyThr->elem, less_by_priority,NULL);
-  schedule();
-}
 
 /* Transitions a blocked thread T to the ready-to-run state.
    This is an error if T is not blocked.  (Use thread_yield() to
@@ -278,13 +269,9 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  if (is_higher_priority(t))
-  {
-    yield_to_ready_thread(t);
-    return;
-  }
-  list_push_back (&ready_list, &t->elem); //
+  list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
   t->status = THREAD_READY;
+  thread_yield();
   intr_set_level (old_level);
 }
 
@@ -356,12 +343,7 @@ thread_yield (void)
   
   if (cur != idle_thread)
   {
-    if (is_higher_priority(cur))
-    {
-      yield_to_ready_thread(cur);
-      
-    }
-    list_push_back (&ready_list, &cur->elem); //
+    list_insert_ordered(&ready_list,&cur->elem,greater_by_priority,NULL);
   }
   cur->status = THREAD_READY;
   schedule ();
