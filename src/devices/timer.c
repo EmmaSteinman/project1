@@ -98,7 +98,7 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
     wake up after exactly x ticks. Just put it on the ready queue after they have
     waited for the right amount of time
   */
-
+  ASSERT(false);
   ASSERT (intr_get_level () == INTR_ON); // assert that interrupts are on
 
 

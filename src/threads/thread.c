@@ -118,6 +118,7 @@ thread_init (void)
 void
 thread_start (void)
 {
+  ASSERT(false);
   /* Create the idle thread. */
   struct semaphore idle_started;
   sema_init (&idle_started, 0);
@@ -263,6 +264,7 @@ greatest_priority(struct thread* checkedThr)
 void
 thread_unblock (struct thread *t)
 {
+  
   enum intr_level old_level;
 
   ASSERT (is_thread (t));
@@ -273,6 +275,7 @@ thread_unblock (struct thread *t)
   t->status = THREAD_READY;
   thread_yield();
   intr_set_level (old_level);
+  ASSERT(false);
 }
 
 /* Returns the name of the running thread. */
@@ -334,6 +337,7 @@ thread_exit (void)
 void
 thread_yield (void)
 {
+  ASSERT(false);
   struct thread *cur = thread_current ();
   enum intr_level old_level;
 
