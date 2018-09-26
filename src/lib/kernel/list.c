@@ -227,39 +227,39 @@ list_push_back (struct list *list, struct list_elem *elem)
   //        employ code there as well. One (implicit) disadvantage of adding it 
   //        here is that read_list can no longer be static, that is it will be 
   //		accessible outside of thread.c. (I don't know if this is bad)
-  if (list == &ready_list)
-  {
-    struct thread *readyThr = list_entry(elem, struct thread, elem);
-    struct thread *runningThr = thread_current();
-    int readyPriority = readyThr->priority;
-    int runningPriority = runningThr->priority;
-    if (readyPriority > runningPriority) 
-    {
-      // make running ready, make ready running
-      // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      // HOW TO DO THIS? 
-      /* I think the idea is :
-       * push the ready thread into the ready_list
-       * make sure it ends up at the front of ready_list
-       *    (it'll be the first one out by the current 
-       *    FIFO standard)
-       * call thread_yield() which will yield the current
-       *    thread and get it in the ready list
-       * I think it's OK for schedule to be called twice,
-       *    (once explicitly by us and once implicitly by
-       *    thread_yield()) but I'm not sure so lets run 
-       *    this by Dr. B
-      */
-    } 
-    else
-    {
-      list_insert (list_end (list), elem);
-    }
-  }
-  else
-  {
+  // if (list == &ready_list)
+  // {
+  //   struct thread *readyThr = list_entry(elem, struct thread, elem);
+  //   struct thread *runningThr = thread_current();
+  //   int readyPriority = readyThr->priority;
+  //   int runningPriority = runningThr->priority;
+  //   if (readyPriority > runningPriority) 
+  //   {
+  //     // make running ready, make ready running
+  //     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  //     // HOW TO DO THIS? 
+  //     /* I think the idea is :
+  //      * push the ready thread into the ready_list
+  //      * make sure it ends up at the front of ready_list
+  //      *    (it'll be the first one out by the current 
+  //      *    FIFO standard)
+  //      * call thread_yield() which will yield the current
+  //      *    thread and get it in the ready list
+  //      * I think it's OK for schedule to be called twice,
+  //      *    (once explicitly by us and once implicitly by
+  //      *    thread_yield()) but I'm not sure so lets run 
+  //      *    this by Dr. B
+  //     */
+  //   } 
+  //   else
+  //   {
+  //     list_insert (list_end (list), elem);
+  //   }
+  // }
+  // else
+  // {
     list_insert (list_end (list), elem);
-  }
+  // }
 }
 
 /* Removes ELEM from its list and returns the element that
