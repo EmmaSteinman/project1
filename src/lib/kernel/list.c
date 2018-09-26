@@ -32,7 +32,7 @@
    elements allows us to do a little bit of checking on some
    operations, which can be valuable.) */
 
-extern struct list ready_list;
+//extern struct list ready_list;
 
 static bool is_sorted (struct list_elem *a, struct list_elem *b,
                        list_less_func *less, void *aux) UNUSED;
@@ -485,6 +485,13 @@ list_sort (struct list *list, list_less_func *less, void *aux)
 /* Inserts ELEM in the proper position in LIST, which must be
    sorted according to LESS given auxiliary data AUX.
    Runs in O(n) average case in the number of elements in LIST. */
+bool 
+greater_by_priority(const struct list_elem *a, const struct list_elem *b, void *ignore)
+{
+  struct thread *threadA = list_entry(a, struct thread, elem);
+  struct thread *threadB = list_entry(b, struct thread, elem);
+  return (threadA->priority >= threadB->priority);
+}
 void
 list_insert_ordered (struct list *list, struct list_elem *elem,
                      list_less_func *less, void *aux)
