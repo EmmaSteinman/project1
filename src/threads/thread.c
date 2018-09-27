@@ -263,34 +263,36 @@ thread_unblock (struct thread *t) //
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  if(is_higher_priority(t)) //special case
-  {
-    //we can assume t != runningThr bc priorities cant be equal
+  // if(is_higher_priority(t)) //special case
+  // {
+  //   //we can assume t != runningThr bc priorities cant be equal
 
-    // insert the guy we want to run next at the 'front'
-    // could try explicitly putting at the front?
-    list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
-    //list_push_back(&ready_list, &t->elem);
-    t->status = THREAD_READY;
-    //thread_yield(); //yield the current thread, calls schedule for us and reenables interrupts
+  //   // insert the guy we want to run next at the 'front'
+  //   // could try explicitly putting at the front?
+  //   list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
+  //   //list_push_back(&ready_list, &t->elem);
+  //   t->status = THREAD_READY;
+  //   //thread_yield(); //yield the current thread, calls schedule for us and reenables interrupts
 
-    // there's something wrong with putting thread_yield here , its causing the hangup.
-    // but not on the first time its hit....
+  //   // there's something wrong with putting thread_yield here , its causing the hangup.
+  //   // but not on the first time its hit....
 
-    // 2nd attempt:
-    //  struct thread *cur = thread_current();
-    // list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
-    // //list_push_back(&ready_list, &cur->elem);
-    // cur->status = THREAD_READY;
+  //   // 2nd attempt:
+  //   //  struct thread *cur = thread_current();
+  //   // list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
+  //   // //list_push_back(&ready_list, &cur->elem);
+  //   // cur->status = THREAD_READY;
 
-    // schedule();
-  }
-  else
-  {
-    //list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
-    list_push_back(&ready_list, &t->elem);
-    t->status = THREAD_READY;
-  }
+  //   // schedule();
+  // }
+  // else
+  // {
+  //   //list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
+  //   list_push_back(&ready_list, &t->elem);
+  //   t->status = THREAD_READY;
+  // }
+  list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
+  t->status = THREAD_READY;
   intr_set_level (old_level);
 }
 /*
@@ -371,8 +373,8 @@ thread_yield (void)
   old_level = intr_disable ();
   if (cur != idle_thread)
   {
-    //list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
-    list_push_back (&ready_list, &cur->elem);
+    list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
+    //list_push_back (&ready_list, &cur->elem);
   }
   cur->status = THREAD_READY;
   schedule ();
