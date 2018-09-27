@@ -98,6 +98,10 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
     wake up after exactly x ticks. Just put it on the ready queue after they have
     waited for the right amount of time
   */
+  if(ticks <= 0)
+  {
+    return; //don't do anything?
+  }
 
   ASSERT (intr_get_level () == INTR_ON); // assert that interrupts are on
 
@@ -110,8 +114,8 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
   cur->sleepSema = malloc(sizeof(struct semaphore));
   ASSERT(cur->sleepSema); //trust nobody
 
-  //list_push_back(&sleeping_list, &cur->sleepingelem); //adds thread to sleeping list --flagged
-  list_insert_ordered(&sleeping_list,&cur->sleepingelem,greater_by_priority,NULL);
+  list_push_back(&sleeping_list, &cur->sleepingelem); //adds thread to sleeping list --flagged
+  //list_insert_ordered(&sleeping_list,&cur->sleepingelem,greater_by_priority,NULL);
 
   sema_init(cur->sleepSema, 0); //pushes thread back and decrement
   sema_down(cur->sleepSema); // calling thread is blocked now, we'll come back when time is up

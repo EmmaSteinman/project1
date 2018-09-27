@@ -253,7 +253,7 @@ thread_block (void)
    it may expect that it can atomically unblock a thread and
    update other data. */
 void
-thread_unblock (struct thread *t)
+thread_unblock (struct thread *t) //
 {
   enum intr_level old_level;
   ASSERT (is_thread (t));
@@ -332,7 +332,10 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread)
+  {
     list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
+    //list_push_back (&ready_list, &cur->elem);
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
