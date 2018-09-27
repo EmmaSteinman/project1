@@ -214,9 +214,9 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   /* Add to run queue. */
-  //ASSERT(false);
+  
   thread_unblock (t);
-  //ASSERT(false);
+  
   struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
   int highest_priority = firstThr->priority;
   if(t->priority < highest_priority)
@@ -374,7 +374,13 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
+  enum intr_level old_level = intr_disable();
   thread_current ()->priority = new_priority;
+  struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
+  int highest_priority = firstThr -> priority;
+  intr_set_level(old_level);
+  if (new_priority < highest_priority)
+    thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -624,7 +630,7 @@ void
 threads_wake(int64_t t)
 {
   ASSERT (intr_get_level () == INTR_OFF);
-  enum intr_level old_level = intr_disable();//==========================
+  //enum intr_level old_level = intr_disable();//==========================
   struct list_elem *e;
   for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
   {
@@ -636,7 +642,7 @@ threads_wake(int64_t t)
       sema_up(thr->sleepSema); 
     }
   }
-  intr_set_level(old_level);
+  //intr_set_level(old_level);
   ASSERT (intr_get_level () == INTR_OFF);
 }
 
