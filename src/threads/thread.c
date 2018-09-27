@@ -217,11 +217,12 @@ thread_create (const char *name, int priority,
   //ASSERT(false);
   thread_unblock (t);
   //ASSERT(false);
-
-  struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
-  int highest_priority = firstThr -> priority;
-  if (t->priority < highest_priority)
+  struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
+  int highest_priority = firstThr->priority;
+  if(t->priority < highest_priority)
     thread_yield();
+  
+
   return tid;
 }
 
@@ -259,6 +260,7 @@ thread_unblock (struct thread *t) //
   ASSERT (t->status == THREAD_BLOCKED);
 
   list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
+  //list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
 
   // Dr. B says we have to be yielding here!! 
@@ -372,13 +374,7 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
-  intr_disable();
   thread_current ()->priority = new_priority;
-  struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
-  int highest_priority = firstThr -> priority;
-  intr_enable();
-  if (new_priority < highest_priority)
-    thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -434,6 +430,7 @@ idle (void *idle_started_ UNUSED)
   struct semaphore *idle_started = idle_started_;
   idle_thread = thread_current ();
   sema_up (idle_started);
+
   for (;;)
     {
       /* Let someone else run. */
@@ -626,6 +623,8 @@ allocate_tid (void)
 void
 threads_wake(int64_t t)
 {
+  ASSERT (intr_get_level () == INTR_OFF);
+  enum intr_level old_level = intr_disable();//==========================
   struct list_elem *e;
   for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
   {
@@ -634,9 +633,11 @@ threads_wake(int64_t t)
     if (thr->wakeAt <= t) // thread is asleep AND enough time to wake
     {
       list_remove(e);     // update our sleeping list
-      sema_up(thr->sleepSema);
+      sema_up(thr->sleepSema); 
     }
   }
+  intr_set_level(old_level);
+  ASSERT (intr_get_level () == INTR_OFF);
 }
 
 /* Offset of `stack' member within `struct thread'.
