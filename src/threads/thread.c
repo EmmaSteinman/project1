@@ -218,6 +218,10 @@ thread_create (const char *name, int priority,
   thread_unblock (t);
   //ASSERT(false);
 
+  struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
+  int highest_priority = firstThr -> priority;
+  if (t->priority < highest_priority)
+    thread_yield();
   return tid;
 }
 
@@ -368,7 +372,13 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
+  intr_disable();
   thread_current ()->priority = new_priority;
+  struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
+  int highest_priority = firstThr -> priority;
+  intr_enable();
+  if (new_priority < highest_priority)
+    thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -424,7 +434,6 @@ idle (void *idle_started_ UNUSED)
   struct semaphore *idle_started = idle_started_;
   idle_thread = thread_current ();
   sema_up (idle_started);
-
   for (;;)
     {
       /* Let someone else run. */
@@ -625,7 +634,7 @@ threads_wake(int64_t t)
     if (thr->wakeAt <= t) // thread is asleep AND enough time to wake
     {
       list_remove(e);     // update our sleeping list
-      sema_up(thr->sleepSema); 
+      sema_up(thr->sleepSema);
     }
   }
 }
