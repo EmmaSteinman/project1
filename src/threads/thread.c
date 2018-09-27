@@ -97,6 +97,7 @@ static tid_t allocate_tid (void);
 void
 thread_init (void)
 {
+  //ASSERT(false);
   ASSERT (intr_get_level () == INTR_OFF);
 
   lock_init (&tid_lock);
@@ -223,7 +224,9 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   /* Add to run queue. */
+  //ASSERT(false);
   thread_unblock (t);
+  //ASSERT(false);
 
   return tid;
 }
@@ -260,10 +263,45 @@ thread_unblock (struct thread *t) //
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
-  //list_push_back (&ready_list, &t->elem);
-  t->status = THREAD_READY;
+  if(is_higher_priority(t)) //special case
+  {
+    //we can assume t != runningThr bc priorities cant be equal
+
+    // insert the guy we want to run next at the 'front'
+    // could try explicitly putting at the front?
+    list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
+    //list_push_back(&ready_list, &t->elem);
+    t->status = THREAD_READY;
+    //thread_yield(); //yield the current thread, calls schedule for us and reenables interrupts
+
+    // there's something wrong with putting thread_yield here , its causing the hangup.
+    // but not on the first time its hit....
+
+    // 2nd attempt:
+    //  struct thread *cur = thread_current();
+    // list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
+    // //list_push_back(&ready_list, &cur->elem);
+    // cur->status = THREAD_READY;
+
+    // schedule();
+  }
+  else
+  {
+    //list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
+    list_push_back(&ready_list, &t->elem);
+    t->status = THREAD_READY;
+  }
   intr_set_level (old_level);
+}
+/*
+  Return whether the thread passed in is of higher priority
+  than the currently running thread (strictly greater)
+*/
+bool
+is_higher_priority(struct thread* thr)
+{
+  struct thread *cur = thread_current();
+  return thr->priority > cur->priority;
 }
 
 /* Returns the name of the running thread. */
@@ -333,8 +371,8 @@ thread_yield (void)
   old_level = intr_disable ();
   if (cur != idle_thread)
   {
-    list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
-    //list_push_back (&ready_list, &cur->elem);
+    //list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
+    list_push_back (&ready_list, &cur->elem);
   }
   cur->status = THREAD_READY;
   schedule ();
