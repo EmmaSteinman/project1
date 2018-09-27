@@ -19,7 +19,7 @@
 #endif
 
 /* Number of timer ticks since OS booted. */
-static int64_t ticks;
+int64_t ticks;
 
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
@@ -105,12 +105,12 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
 
   ASSERT (intr_get_level () == INTR_ON); // assert that interrupts are on
 
+  enum intr_level old_level = intr_disable();//==========================
 
   struct thread *cur = thread_current();
   int64_t start = timer_ticks ();
   cur->wakeAt = start + ticks;       //set wakeAt so thread "sleeps" and will be
                                       //checked by thread_ticks()
-
   cur->sleepSema = malloc(sizeof(struct semaphore));
   ASSERT(cur->sleepSema); //trust nobody
 
@@ -118,6 +118,8 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
 
   sema_init(cur->sleepSema, 0); //pushes thread back on decrement attempt
   sema_down(cur->sleepSema); // calling thread is blocked now, we'll come back when time is up
+
+  //intr_set_level (old_level); //=========================
 
   ASSERT(cur->sleepSema);
   free(cur->sleepSema);
@@ -197,8 +199,11 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
+  ASSERT (intr_get_level () == INTR_OFF);
   ticks++;
   thread_tick ();
+  threads_wake(ticks);
+  ASSERT (intr_get_level () == INTR_OFF);
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

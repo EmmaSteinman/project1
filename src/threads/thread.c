@@ -22,6 +22,8 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
+extern int64_t ticks;
+
 /* List of all sleeping processes. Processes are added to this list
 when they call timer_sleep and removed when the appropriate number of
 ticks have passed.
@@ -146,22 +148,10 @@ thread_tick (void)
   else
     kernel_ticks++;
 
-  // Putting the threads_wake() call in the bottom if statement breaks
-  // everything... for some reason (???????) --> Ask Dr. B
-  // we could throw this in schedule() I think? right before all the code that's there?
-  // Ask Dr B. This:
-  /* Since the second part of the project asks us to "immediately yield the processor 
-   to the new thread." in the case of mismatched priority, would moving this wake up check
-   to schedule() be technically incorrect (for cases where the thread to be pushed back
-   has the higher priority), as our code to yield the processor to a new thread
-   (assuming it stays in list_push_back, or somewhere close) wouldn't be called untile schedule()
-   is called (ie not as immediate as it could be) */
-  if(thread_ticks % TIME_SLICE == 0)
-    threads_wake();
-
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return (); //asserts its an external interrupt, sets yield on ret flag to true
+
 }
 
 /* Prints thread statistics. */
@@ -263,36 +253,12 @@ thread_unblock (struct thread *t) //
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  // if(is_higher_priority(t)) //special case
-  // {
-  //   //we can assume t != runningThr bc priorities cant be equal
 
-  //   // insert the guy we want to run next at the 'front'
-  //   // could try explicitly putting at the front?
-  //   list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
-  //   //list_push_back(&ready_list, &t->elem);
-  //   t->status = THREAD_READY;
-  //   //thread_yield(); //yield the current thread, calls schedule for us and reenables interrupts
-
-  //   // there's something wrong with putting thread_yield here , its causing the hangup.
-  //   // but not on the first time its hit....
-
-  //   // 2nd attempt:
-  //   //  struct thread *cur = thread_current();
-  //   // list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
-  //   // //list_push_back(&ready_list, &cur->elem);
-  //   // cur->status = THREAD_READY;
-
-  //   // schedule();
-  // }
-  // else
-  // {
-  //   //list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
-  //   list_push_back(&ready_list, &t->elem);
-  //   t->status = THREAD_READY;
-  // }
   list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
   t->status = THREAD_READY;
+
+  // Dr. B says we have to be yielding here!! 
+
   intr_set_level (old_level);
 }
 /*
@@ -649,15 +615,15 @@ allocate_tid (void)
 
 /* Checks all sleeping threads, wakes (unblocks) them accordingly */
 void
-threads_wake(void)
+threads_wake(int64_t t)
 {
   struct list_elem *e;
   for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
   {
     struct thread *thr = list_entry(e, struct thread, sleepingelem);
-    if (thr->wakeAt != -1 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
+    ASSERT(thr->wakeAt != -1);
+    if (thr->wakeAt <= t) // thread is asleep AND enough time to wake
     {
-      thr->wakeAt = -1; //reset to default 'not sleeping' val
       list_remove(e);     // update our sleeping list
       sema_up(thr->sleepSema); 
     }
