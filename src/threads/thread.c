@@ -615,12 +615,11 @@ threads_wake(void)
   for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
   {
     struct thread *thr = list_entry(e, struct thread, sleepingelem);
-    if (thr->wakeAt >= 0 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
+    if (thr->wakeAt != -1 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
     {
       thr->wakeAt = -1; //reset to default 'not sleeping' val
       list_remove(e);     // update our sleeping list
-      sema_up(thr->sleepSema); // free sema to save space; we'll reallocate if thr sleeps again
-    
+      sema_up(thr->sleepSema); 
     }
   }
 }
