@@ -148,9 +148,6 @@ thread_tick (void)
   else
     kernel_ticks++;
 
-  if (thread_ticks % TIME_SLICE == 0)
-    threads_wake(ticks);
-
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return (); //asserts its an external interrupt, sets yield on ret flag to true
@@ -220,10 +217,10 @@ thread_create (const char *name, int priority,
   
   thread_unblock (t);
   
-  // struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
-  // int highest_priority = firstThr->priority;
-  // if(t->priority < highest_priority)
-  //   thread_yield();
+  struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
+  int highest_priority = firstThr->priority;
+  if(t->priority < highest_priority)
+    thread_yield();
   
 
   return tid;
@@ -262,8 +259,8 @@ thread_unblock (struct thread *t) //
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
 
-  //list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
-  list_push_back (&ready_list, &t->elem);
+  list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
+  //list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
 
   // Dr. B says we have to be yielding here!! 
@@ -348,8 +345,8 @@ thread_yield (void)
   old_level = intr_disable ();
   if (cur != idle_thread)
   {
-    //list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
-    list_push_back (&ready_list, &cur->elem);
+    list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
+    //list_push_back (&ready_list, &cur->elem);
   }
   cur->status = THREAD_READY;
   schedule ();
@@ -377,13 +374,13 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
-  // enum intr_level old_level = intr_disable();
+  enum intr_level old_level = intr_disable();
   thread_current ()->priority = new_priority;
-  // struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
-  // int highest_priority = firstThr -> priority;
-  // intr_set_level(old_level);
-  // if (new_priority < highest_priority)
-  //   thread_yield();
+  struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
+  int highest_priority = firstThr -> priority;
+  intr_set_level(old_level);
+  if (new_priority < highest_priority)
+    thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -630,7 +627,7 @@ allocate_tid (void)
 
 /* Checks all sleeping threads, wakes (unblocks) them accordingly */
 void
-threads_wake(int64_t t)
+threads_wake()
 {
   ASSERT (intr_get_level () == INTR_OFF);
   //enum intr_level old_level = intr_disable();//==========================
@@ -642,9 +639,9 @@ threads_wake(int64_t t)
     if (thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
     {
       //thr->wakeAt = -1;     // update our sleeping list
-      list_remove(e);
-      sema_up(thr->sleepSema); 
       //list_remove(e);
+      sema_up(thr->sleepSema); 
+      list_remove(e);
     }
   }
 
