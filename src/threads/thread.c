@@ -219,7 +219,7 @@ thread_create (const char *name, int priority,
   
   struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
   int highest_priority = firstThr->priority;
-  if(t->priority < highest_priority)
+  if(t->priority <= highest_priority)
     thread_yield();
   
 
@@ -264,8 +264,9 @@ thread_unblock (struct thread *t) //
   t->status = THREAD_READY;
 
   // Dr. B says we have to be yielding here!! 
-
+  
   intr_set_level (old_level);
+  
 }
 /*
   Return whether the thread passed in is of higher priority
@@ -376,11 +377,13 @@ thread_set_priority (int new_priority)
 {
   enum intr_level old_level = intr_disable();
   thread_current ()->priority = new_priority;
-  struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
+ /* struct thread *firstThr = list_entry(list_front (&ready_list), struct thread, elem);
   int highest_priority = firstThr -> priority;
   intr_set_level(old_level);
   if (new_priority < highest_priority)
-    thread_yield();
+    thread_yield();*/
+  intr_set_level(old_level);
+  thread_yield();
 }
 
 /* Returns the current thread's priority. */
