@@ -217,12 +217,11 @@ thread_create (const char *name, int priority,
   
   thread_unblock (t);
   
+  // adding to ready_list, if this is the highest priority thing, yield!
   struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
   int highest_priority = firstThr->priority;
-  if(t == firstThr) //TODO tests don't break if just == here? why?
+  if(t == firstThr && t->priority > thread_current()->priority)
     thread_yield();
-  // if(t->priority == highest_priority) //TODO tests don't break if just == here? why?
-  //   thread_yield();
   
 
   return tid;
@@ -655,22 +654,12 @@ threads_wake()
     ASSERT(thr->wakeAt != -1);
     if (thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
     {
-      //thr->wakeAt = -1;     // update our sleeping list
+      // update our sleeping list
       //list_remove(e);
       sema_up(thr->sleepSema); 
       list_remove(e);
     }
   }
-
-  // for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
-  // {
-  //   struct thread *thr = list_entry(e, struct thread, sleepingelem);
-  //   if(thr->wakeAt == -1)
-  //   {
-  //     list_remove(e);
-  //   }
-  // }
-  //intr_set_level(old_level);
   ASSERT (intr_get_level () == INTR_OFF);
 }
 

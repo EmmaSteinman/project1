@@ -116,29 +116,11 @@ sema_up (struct semaphore *sema)
   old_level = intr_disable ();
   if (!list_empty (&sema->waiters)) 
   {
-    struct list_elem *readyElem = list_pop_front(&sema->waiters);
-    
+    struct list_elem *readyElem = list_pop_front(&sema->waiters); //GOOD
     struct thread * readyThr = list_entry(readyElem, struct thread, elem);
     struct thread* curThr = thread_current();
-    thread_unblock (readyThr);
-    //struct thread* curThr = thread_current();
-    struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
-
-    if (readyThr->priority > firstThr->priority && readyThr->priority > curThr->priority)
-    {
-      //ASSERT(false);
-      ASSERT(curThr->status == THREAD_RUNNING);
-      if(!intr_context())
-      {
-        thread_yield();
-      }
-    }
-    
-    // if(readyThr->priority <= firstThr->priority)
-    //   thread_yield();          
-              
+    thread_unblock (readyThr);   
   }
-
   sema->value++;
   intr_set_level (old_level);
 }

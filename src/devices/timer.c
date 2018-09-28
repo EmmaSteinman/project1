@@ -118,8 +118,12 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
 
   list_insert_ordered (&sleeping_list, &cur->sleepingelem, greater_by_priority, NULL);
   //list_push_back(&sleeping_list, &cur->sleepingelem); //adds thread to sleeping list --flagged
+
   intr_set_level (old_level); //=========================
+
   sema_down(cur->sleepSema); // calling thread is blocked now, we'll come back when time is up
+
+  //list_remove(&cur->sleepingelem);
 
   ASSERT(cur->sleepSema);
   free(cur->sleepSema);
