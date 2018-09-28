@@ -202,7 +202,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ASSERT (intr_get_level () == INTR_OFF);
   ticks++;
   
-  if(ticks % 5 == 0)
+  //if(ticks % 5 == 0)
     threads_wake();
 
   thread_tick ();
