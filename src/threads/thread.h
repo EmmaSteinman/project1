@@ -91,6 +91,7 @@ struct thread
     struct list_elem allelem;           /* List element for all threads list. */
     int64_t wakeAt;                     /* If nonnegative, thread is sleeping
                                           and should wake up at wakeAt ticks */
+    int niceVal;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */

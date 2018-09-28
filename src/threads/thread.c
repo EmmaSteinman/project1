@@ -195,7 +195,7 @@ thread_create (const char *name, int priority,
     return TID_ERROR;
 
   /* Initialize thread. */
-  init_thread (t, name, priority);
+  init_thread (t, name, priority); //TODO
   tid = t->tid = allocate_tid ();
 
   /* Stack frame for kernel_thread(). */
@@ -375,15 +375,19 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
+  if(thread_mlfqs) //ignore if using mlfqs
+  {
+    return;
+  }
   enum intr_level old_level = intr_disable();
   thread_current ()->priority = new_priority;
- /* struct thread *firstThr = list_entry(list_front (&ready_list), struct thread, elem);
+  struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
   int highest_priority = firstThr -> priority;
   intr_set_level(old_level);
   if (new_priority < highest_priority)
-    thread_yield();*/
-  intr_set_level(old_level);
-  thread_yield();
+    thread_yield();
+  // intr_set_level(old_level);
+  // thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -395,17 +399,20 @@ thread_get_priority (void)
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED)
+thread_set_nice (int nice)
 {
-  /* Not yet implemented. */
+  enum intr_level old_level = intr_disable();
+  struct thread* cur = thread_current();
+  cur->niceVal = nice;
+  intr_set_level(old_level);
 }
 
 /* Returns the current thread's nice value. */
 int
 thread_get_nice (void)
 {
-  /* Not yet implemented. */
-  return 0;
+  struct thread* cur = thread_current();
+  return cur->niceVal;
 }
 
 /* Returns 100 times the system load average. */
