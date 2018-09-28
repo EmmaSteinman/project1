@@ -128,7 +128,10 @@ sema_up (struct semaphore *sema)
     {
       //ASSERT(false);
       ASSERT(curThr->status == THREAD_RUNNING);
-      thread_yield();
+      if(!intr_context())
+      {
+        thread_yield();
+      }
     }
     
     // if(readyThr->priority <= firstThr->priority)
