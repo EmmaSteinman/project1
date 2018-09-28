@@ -61,7 +61,6 @@ struct kernel_thread_frame
 static long long idle_ticks;    /* # of timer ticks spent idle. */
 static long long kernel_ticks;  /* # of timer ticks in kernel threads. */
 static long long user_ticks;    /* # of timer ticks in user programs. */
-
 /* Scheduling. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
@@ -76,7 +75,7 @@ static void kernel_thread (thread_func *, void *aux);
 static void idle (void *aux UNUSED);
 static struct thread *running_thread (void);
 static struct thread *next_thread_to_run (void);
-static void init_thread (struct thread *, const char *name, int priority);
+static void init_thread (struct thread *, const char *name, int priority, int recent_cpu);
 static bool is_thread (struct thread *) UNUSED;
 static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
@@ -109,7 +108,7 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
-  init_thread (initial_thread, "main", PRI_DEFAULT);
+  init_thread (initial_thread, "main", PRI_DEFAULT,0);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 }
@@ -195,7 +194,8 @@ thread_create (const char *name, int priority,
     return TID_ERROR;
 
   /* Initialize thread. */
-  init_thread (t, name, priority); //TODO
+  int recent_cpu = thread_current() -> recent_cpu;
+  init_thread (t, name, priority,recent_cpu); //TODO
   tid = t->tid = allocate_tid ();
 
   /* Stack frame for kernel_thread(). */
@@ -427,18 +427,27 @@ thread_get_nice (void)
 int
 thread_get_load_avg (void)
 {
-  /* Not yet implemented. */
-  return 0;
+  return(0);
+  //return (100*load_avg);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void)
 {
-  /* Not yet implemented. */
-  return 0;
+  return (100*thread_current()->recent_cpu);
 }
-
+//must be fixed point (load_avg)
+/*
+int64_t calc_load_avg(int64_t load_avg) //~~~~~~~~flagged
+{
+
+}
+void update_recent_cpu(); //~~~~~~~~~~~~~~~~~~~~~~~flagged
+{
+
+}
+*/
 /* Idle thread.  Executes when no other thread is ready to run.
 
    The idle thread is initially put on the ready list by
@@ -512,7 +521,7 @@ is_thread (struct thread *t)
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 static void
-init_thread (struct thread *t, const char *name, int priority)
+init_thread (struct thread *t, const char *name, int priority, int recent_cpu)
 {
   enum intr_level old_level;
 
@@ -527,7 +536,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->wakeAt = -1;
-
+  t->recent_cpu = recent_cpu; //~~~~~~~~~~~~~~flagged
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
@@ -663,15 +672,7 @@ threads_wake()
     }
   }
 
-  // for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
-  // {
-  //   struct thread *thr = list_entry(e, struct thread, sleepingelem);
-  //   if(thr->wakeAt == -1)
-  //   {
-  //     list_remove(e);
-  //   }
-  // }
-  //intr_set_level(old_level);
+
   ASSERT (intr_get_level () == INTR_OFF);
 }
 

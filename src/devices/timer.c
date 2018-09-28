@@ -20,7 +20,8 @@
 
 /* Number of timer ticks since OS booted. */
 int64_t ticks;
-
+/* System Load average initialized to 0 at boot*/
+//int64_t load_avg = 0; //~~~~~~~~~~~~~flagged
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
@@ -108,7 +109,7 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
   enum intr_level old_level = intr_disable();//==========================
 
   struct thread *cur = thread_current();
-  //int64_t start = timer_ticks ();
+  
   cur->wakeAt = timer_ticks () + ticks;       //set wakeAt so thread "sleeps" and will be
                                       //checked by thread_ticks()
   cur->sleepSema = malloc(sizeof(struct semaphore));
@@ -203,8 +204,13 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   
   if(ticks % 5 == 0)
-    threads_wake();
+    threads_wake ();
 
+  //if(timer_ticks () % TIMER_FREQ) //~~~~~~~~~~~~~~~~~~~~flagged
+  //{
+    //load_avg = calc_load_avg(load_avg);
+    //update_recent_cpu();
+  //}
   thread_tick ();
   ASSERT (intr_get_level () == INTR_OFF);
 }

@@ -92,7 +92,7 @@ struct thread
     int64_t wakeAt;                     /* If nonnegative, thread is sleeping
                                           and should wake up at wakeAt ticks */
     int niceVal;
-
+    int recent_cpu;
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     struct list_elem sleepingelem;
@@ -145,7 +145,10 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-void threads_wake();
+void threads_wake(void);
 bool is_higher_priority(struct thread*);
+
+//int64_t calc_load_avg(int64_t load_avg); //~~~~~~~~flagged
+//void update_recent_cpu(); //~~~~~~~~~~~~~~~~~~~~~~~flagged
 
 #endif /* threads/thread.h */
