@@ -410,6 +410,7 @@ thread_set_nice (int nice)
 
   //change this line below based on fixed pt stuff
   int newPriority = PRI_MAX - (recentCPU / 4) - (nice * 2);
+  ASSERT(PRI_MIN <= newPriority && newPriority <= PRI_MAX);
   cur->priority = newPriority;
   intr_set_level(old_level);
 }
