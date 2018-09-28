@@ -404,6 +404,13 @@ thread_set_nice (int nice)
   enum intr_level old_level = intr_disable();
   struct thread* cur = thread_current();
   cur->niceVal = nice;
+  // TODO recalculate threads priority!!!
+  int recentCPU = thread_get_recent_cpu();
+  int priority = cur->priority;
+
+  //change this line below based on fixed pt stuff
+  int newPriority = PRI_MAX - (recentCPU / 4) - (nice * 2);
+  cur->priority = newPriority;
   intr_set_level(old_level);
 }
 
