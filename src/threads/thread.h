@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "threads/fixed-point.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -92,7 +93,7 @@ struct thread
     int64_t wakeAt;                     /* If nonnegative, thread is sleeping
                                           and should wake up at wakeAt ticks */
     int niceVal;
-    int recent_cpu;
+    fixed_point_t recent_cpu;
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     struct list_elem sleepingelem;
@@ -148,7 +149,9 @@ int thread_get_load_avg (void);
 void threads_wake(void);
 bool is_higher_priority(struct thread*);
 
-//int64_t calc_load_avg(int64_t load_avg); //~~~~~~~~flagged
-//void update_recent_cpu(); //~~~~~~~~~~~~~~~~~~~~~~~flagged
+int calc_nice(fixed_point_t recent_cpu, int nice);
+fixed_point_t calc_load_avg(void); //~~~~~~~~flagged
+fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice); //~~~~~flagged
+void update_recent_cpu(void); //~~~~~~~~~~~~~~~~~~~~~~~flagged
 
 #endif /* threads/thread.h */

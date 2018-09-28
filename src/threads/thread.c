@@ -75,12 +75,15 @@ static void kernel_thread (thread_func *, void *aux);
 static void idle (void *aux UNUSED);
 static struct thread *running_thread (void);
 static struct thread *next_thread_to_run (void);
-static void init_thread (struct thread *, const char *name, int priority, int recent_cpu);
+static void init_thread (struct thread *, const char *name, int priority, fixed_point_t recent_cpu); //flagged
+//static void init_thread (struct thread *, const char *name, int priority);
 static bool is_thread (struct thread *) UNUSED;
 static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
+
+extern fixed_point_t load_avg;
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -108,7 +111,8 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
-  init_thread (initial_thread, "main", PRI_DEFAULT,0);
+  init_thread (initial_thread, "main", PRI_DEFAULT,fix_int(0));// --flagged
+ // init_thread (initial_thread, "main", PRI_DEFAULT); 
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 }
@@ -194,8 +198,8 @@ thread_create (const char *name, int priority,
     return TID_ERROR;
 
   /* Initialize thread. */
-  int recent_cpu = thread_current() -> recent_cpu;
-  init_thread (t, name, priority,recent_cpu); //TODO
+  init_thread (t, name, priority, thread_current()->recent_cpu); //flagged
+  //init_thread (t, name, priority); //TODO
   tid = t->tid = allocate_tid ();
 
   /* Stack frame for kernel_thread(). */
@@ -386,8 +390,6 @@ thread_set_priority (int new_priority)
   intr_set_level(old_level);
   if (new_priority < highest_priority)
     thread_yield();
-  // intr_set_level(old_level);
-  // thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -405,14 +407,12 @@ thread_set_nice (int nice)
   struct thread* cur = thread_current();
   cur->niceVal = nice;
   // TODO recalculate threads priority!!!
-  int recentCPU = thread_get_recent_cpu();
-  int priority = cur->priority;
-
-  //change this line below based on fixed pt stuff
-  int newPriority = PRI_MAX - (recentCPU / 4) - (nice * 2);
-  ASSERT(PRI_MIN <= newPriority && newPriority <= PRI_MAX);
-  cur->priority = newPriority;
-  intr_set_level(old_level);
+  //int recentCPU = thread_get_recent_cpu();
+ 
+  //int newPriority = PRI_MAX - (recentCPU / 4) - (nice * 2);
+  //ASSERT(PRI_MIN <= newPriority && newPriority <= PRI_MAX);
+  //cur->priority = newPriority;
+  //intr_set_level(old_level);
 }
 
 /* Returns the current thread's nice value. */
@@ -427,27 +427,47 @@ thread_get_nice (void)
 int
 thread_get_load_avg (void)
 {
-  return(0);
-  //return (100*load_avg);
+  fixed_point_t scaledLoad = fix_scale(load_avg,100);
+  return(fix_round(scaledLoad));
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void)
 {
-  return (100*thread_current()->recent_cpu);
+  fixed_point_t scaledCpu = fix_scale(thread_current()->recent_cpu,100);
+  return(fix_round(scaledCpu));
 }
 //must be fixed point (load_avg)
-/*
-int64_t calc_load_avg(int64_t load_avg) //~~~~~~~~flagged
+int calc_nice(fixed_point_t recent_cpu, int nice)
 {
-
+  return(0);
 }
-void update_recent_cpu(); //~~~~~~~~~~~~~~~~~~~~~~~flagged
+fixed_point_t calc_load_avg(void) //~~~~~~~~flagged
 {
-
+  fixed_point_t frac1 = fix_frac(59,60);
+  fixed_point_t frac2 = fix_frac(1,60);
+  fixed_point_t new_load = fix_add(fix_mul(frac1,load_avg),fix_scale(frac2,list_size(&ready_list))); 
+  return(new_load);
 }
-*/
+fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice) //~~~~~~~~flagged
+{
+  fixed_point_t num = fix_scale(load_avg,2);
+  fixed_point_t denom = fix_add(num,fix_int(1));
+  fixed_point_t new_cpu = fix_add(fix_mul(num, denom), fix_int(nice)); 
+  return(new_cpu);
+}
+
+void update_recent_cpu(void) //~~~~~~~~~~~~~~~~~~~~~~~flagged
+{
+  struct list_elem *e;
+  for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
+  {
+    struct thread *thr = list_entry(e, struct thread, sleepingelem);
+    thr->recent_cpu = calc_recent_cpu(thr->recent_cpu,thr->niceVal);
+  }
+}
+
 /* Idle thread.  Executes when no other thread is ready to run.
 
    The idle thread is initially put on the ready list by
@@ -521,7 +541,8 @@ is_thread (struct thread *t)
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 static void
-init_thread (struct thread *t, const char *name, int priority, int recent_cpu)
+init_thread (struct thread *t, const char *name, int priority, fixed_point_t recent_cpu)//flagged
+//init_thread (struct thread *t, const char *name, int priority)
 {
   enum intr_level old_level;
 
@@ -654,7 +675,7 @@ allocate_tid (void)
 
 /* Checks all sleeping threads, wakes (unblocks) them accordingly */
 void
-threads_wake()
+threads_wake(void)
 {
   ASSERT (intr_get_level () == INTR_OFF);
   //enum intr_level old_level = intr_disable();//==========================
