@@ -219,8 +219,10 @@ thread_create (const char *name, int priority,
   
   struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
   int highest_priority = firstThr->priority;
-  if(t->priority <= highest_priority)
+  if(t == firstThr) //TODO tests don't break if just == here? why?
     thread_yield();
+  // if(t->priority == highest_priority) //TODO tests don't break if just == here? why?
+  //   thread_yield();
   
 
   return tid;
@@ -262,11 +264,8 @@ thread_unblock (struct thread *t) //
   list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
   //list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
-
-  // Dr. B says we have to be yielding here!! 
   
   intr_set_level (old_level);
-  
 }
 /*
   Return whether the thread passed in is of higher priority
