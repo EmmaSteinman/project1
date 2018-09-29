@@ -149,7 +149,6 @@ int thread_get_load_avg (void);
 void threads_wake(void);
 bool is_higher_priority(struct thread*);
 
-int calc_nice(fixed_point_t recent_cpu, int nice);
 fixed_point_t calc_load_avg(void); //~~~~~~~~flagged
 fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice); //~~~~~flagged
 void update_recent_cpu(void); //~~~~~~~~~~~~~~~~~~~~~~~flagged

@@ -75,8 +75,7 @@ static void kernel_thread (thread_func *, void *aux);
 static void idle (void *aux UNUSED);
 static struct thread *running_thread (void);
 static struct thread *next_thread_to_run (void);
-static void init_thread (struct thread *, const char *name, int priority, fixed_point_t recent_cpu); //flagged
-//static void init_thread (struct thread *, const char *name, int priority);
+static void init_thread (struct thread *, const char *name, int priority, fixed_point_t recent_cpu, int nice); //flagged
 static bool is_thread (struct thread *) UNUSED;
 static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
@@ -111,7 +110,7 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
-  init_thread (initial_thread, "main", PRI_DEFAULT,fix_int(0));// --flagged
+  init_thread (initial_thread, "main", PRI_DEFAULT,fix_int(0),0);// --flagged
  // init_thread (initial_thread, "main", PRI_DEFAULT); 
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
@@ -197,8 +196,9 @@ thread_create (const char *name, int priority,
   if (t == NULL)
     return TID_ERROR;
 
-  /* Initialize thread. */
-  init_thread (t, name, priority, thread_current()->recent_cpu); //flagged
+
+  /* Initialize thread */
+  init_thread (t, name, priority, thread_current()->recent_cpu,thread_current()->niceVal); //flagged
   //init_thread (t, name, priority); //TODO
   tid = t->tid = allocate_tid ();
 
@@ -222,8 +222,7 @@ thread_create (const char *name, int priority,
   thread_unblock (t);
   
   struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
-  int highest_priority = firstThr->priority;
-  if(t->priority <= highest_priority)
+  if(t == firstThr && t->priority > thread_current()->priority)
     thread_yield();
   
 
@@ -403,16 +402,27 @@ thread_get_priority (void)
 void
 thread_set_nice (int nice)
 {
+  if(!thread_mlfqs) 
+    return;
   enum intr_level old_level = intr_disable();
   struct thread* cur = thread_current();
   cur->niceVal = nice;
-  // TODO recalculate threads priority!!!
-  //int recentCPU = thread_get_recent_cpu();
- 
-  //int newPriority = PRI_MAX - (recentCPU / 4) - (nice * 2);
-  //ASSERT(PRI_MIN <= newPriority && newPriority <= PRI_MAX);
-  //cur->priority = newPriority;
-  //intr_set_level(old_level);
+  
+  int newPriority = PRI_MAX - (fix_round(cur->recent_cpu)/4) - (nice * 2);
+  if (newPriority < PRI_MIN)
+    cur->priority = PRI_MIN;
+  else if (newPriority > PRI_MAX)
+    cur->priority = PRI_MAX;
+  else
+    cur->priority = newPriority;
+
+  struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
+  int highest_priority = firstThr->priority;
+  
+  intr_set_level(old_level);
+
+  if (cur -> priority < highest_priority)
+    thread_yield();
 }
 
 /* Returns the current thread's nice value. */
@@ -438,12 +448,9 @@ thread_get_recent_cpu (void)
   fixed_point_t scaledCpu = fix_scale(thread_current()->recent_cpu,100);
   return(fix_round(scaledCpu));
 }
+
 //must be fixed point (load_avg)
-int calc_nice(fixed_point_t recent_cpu, int nice)
-{
-  return(0);
-}
-fixed_point_t calc_load_avg(void) //~~~~~~~~flagged
+fixed_point_t calc_load_avg(void) //~~~~~~~~flagged added +1
 {
   fixed_point_t frac1 = fix_frac(59,60);
   fixed_point_t frac2 = fix_frac(1,60);
@@ -454,7 +461,7 @@ fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice) //~~~~~~~~flag
 {
   fixed_point_t num = fix_scale(load_avg,2);
   fixed_point_t denom = fix_add(num,fix_int(1));
-  fixed_point_t new_cpu = fix_add(fix_mul(num, denom), fix_int(nice)); 
+  fixed_point_t new_cpu = fix_add(fix_div(num, denom), fix_int(nice)); 
   return(new_cpu);
 }
 
@@ -541,7 +548,7 @@ is_thread (struct thread *t)
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 static void
-init_thread (struct thread *t, const char *name, int priority, fixed_point_t recent_cpu)//flagged
+init_thread (struct thread *t, const char *name, int priority, fixed_point_t recent_cpu, int nice)//flagged
 //init_thread (struct thread *t, const char *name, int priority)
 {
   enum intr_level old_level;
@@ -554,10 +561,23 @@ init_thread (struct thread *t, const char *name, int priority, fixed_point_t rec
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->wakeAt = -1;
   t->recent_cpu = recent_cpu; //~~~~~~~~~~~~~~flagged
+  t->niceVal = nice;
+  if(!thread_mlfqs) 
+    t->priority = priority;
+  else //calculate priority
+  {
+    int newPriority = PRI_MAX - (fix_round(recent_cpu)/4) - (nice * 2);
+    if (newPriority < PRI_MIN)
+      t->priority = PRI_MIN;
+    else if (newPriority > PRI_MAX)
+      t->priority = PRI_MAX;
+    else
+      t->priority = newPriority;
+  }
+
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);

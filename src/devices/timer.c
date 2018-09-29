@@ -203,16 +203,18 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ASSERT (intr_get_level () == INTR_OFF);
   ticks++;
-  //fix_add(thread_current()->recent_cpu,fix_int(1)); //~~~~~~~~~flagged
 
-  if(ticks % 5 == 0)
-    threads_wake ();
+  if (thread_current()->name != "idle")
+    thread_current()->recent_cpu = fix_add(thread_current()->recent_cpu,fix_int(1)); //~~~~~~~~~flagged
 
   if(ticks % TIMER_FREQ == 0) //~~~~~~~~~~~~~~~~~~~~flagged
   {
-    //load_avg = calc_load_avg();
-    //update_recent_cpu();
+    load_avg = calc_load_avg();
+    update_recent_cpu();
   }
+
+  if(ticks % 5 == 0)
+    threads_wake ();
   thread_tick ();
   ASSERT (intr_get_level () == INTR_OFF);
 }
