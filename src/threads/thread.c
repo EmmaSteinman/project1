@@ -198,7 +198,7 @@ thread_create (const char *name, int priority,
 
 
   /* Initialize thread */
-  init_thread (t, name, priority, thread_current()->recent_cpu,thread_current()->niceVal); //flagged
+  init_thread (t, name, priority, fix_int(0),1); //flagged
   //init_thread (t, name, priority); //TODO
   tid = t->tid = allocate_tid ();
 

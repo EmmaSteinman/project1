@@ -213,7 +213,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
     load_avg = calc_load_avg();
   }
 
-  if(ticks % 5 == 0)
+  if(ticks % 4 == 0)
   {
     threads_wake ();
     if (thread_mlfqs)
