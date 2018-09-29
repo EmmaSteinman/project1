@@ -1,6 +1,7 @@
 #include "list.h"
 #include "../debug.h"
 #include "../../threads/thread.h"
+#include "../../threads/synch.h"
 
 /* Our doubly linked lists have two header elements: the "head"
    just before the first element and the "tail" just after the
@@ -492,6 +493,27 @@ greater_by_priority(const struct list_elem *a, const struct list_elem *b, void *
   struct thread *threadB = list_entry(b, struct thread, elem);
   return (threadA->priority > threadB->priority);
 }
+
+// bool
+// greater_by_priority_cond(const struct list_elem *a, const struct list_elem *b, void *ignore)
+// {
+//   struct semaphore_elem *seA = list_entry(a, struct semaphore_elem, elem);
+//   struct semaphore_elem *seB = list_entry(b, struct semaphore_elem, elem);
+
+//   struct semaphore *sA = seA->semaphore;
+//   struct semaphore *sB = seB->semaphore;
+
+//   struct list *waitersA = &sA->waiters;
+//   struct list *waitersB = &sB->waiters;
+
+//   struct list_elem *leA = list_begin(waitersA);
+//   struct list_elem *leB = list_begin(waitersB);
+
+//   struct thread *threadA = list_entry(leA, struct thread, elem);
+//   struct thread *threadB = list_entry(leB, struct thread, elem);
+
+//   return (threadA->priority > threadB->priority);
+// }
 
 void
 list_insert_ordered (struct list *list, struct list_elem *elem,

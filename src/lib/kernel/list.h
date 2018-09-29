@@ -168,6 +168,9 @@ typedef bool list_less_func (const struct list_elem *a,
 bool greater_by_priority(const struct list_elem *a,
                              const struct list_elem *b,
                              void *ignore);
+bool greater_by_priority_cond(const struct list_elem *a,
+                             const struct list_elem *b,
+                             void *ignore);
 /* Operations on lists with ordered elements. */
 void list_sort (struct list *,
                 list_less_func *, void *aux);
