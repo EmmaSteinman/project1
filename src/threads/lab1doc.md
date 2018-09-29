@@ -16,7 +16,7 @@
 > If you have any preliminary comments on your submission, notes for the
 > Instructor, or extra credit, please give them here.
 
-We chose to complete Exercise 1.3 - Advanced Scheduler instead of Exercise 1.2.2 - Priority Donation. 
+We chose to complete Exercise 1.3 - Advanced Scheduler instead of Exercise 1.2.2 - Priority Donation. We also pass tests with different seeds.
 
 > Please cite any offline or online sources you consulted while
 > preparing your submission, other than the Pintos documentation, course
