@@ -200,9 +200,9 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
 
   if (thread_current()->name != "idle" && thread_mlfqs)
-    thread_current()->recent_cpu = fix_add(thread_current()->recent_cpu,fix_int(1)); //~~~~~~~~~flagged
+    thread_current()->recent_cpu = fix_add(thread_current()->recent_cpu,fix_int(1)); 
 
-  if(ticks % TIMER_FREQ == 0 && thread_mlfqs) //~~~~~~~~~~~~~~~~~~~~flagged
+  if(ticks % TIMER_FREQ == 0 && thread_mlfqs) 
   {
     load_avg = calc_load_avg();
   }

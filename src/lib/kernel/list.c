@@ -461,7 +461,7 @@ struct semaphore_elem
   };
 
 bool
-greater_by_priority_cond(const struct list_elem *a, const struct list_elem *b, void *ignore)
+ASDF(const struct list_elem *a, const struct list_elem *b, void *ignore)
 {
   struct semaphore_elem *seA = list_entry(a, struct semaphore_elem, elem);
   struct semaphore_elem *seB = list_entry(b, struct semaphore_elem, elem);
