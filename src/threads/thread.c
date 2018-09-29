@@ -22,6 +22,8 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
+extern int64_t ticks;
+
 /* List of all sleeping processes. Processes are added to this list
 when they call timer_sleep and removed when the appropriate number of
 ticks have passed.
@@ -59,7 +61,6 @@ struct kernel_thread_frame
 static long long idle_ticks;    /* # of timer ticks spent idle. */
 static long long kernel_ticks;  /* # of timer ticks in kernel threads. */
 static long long user_ticks;    /* # of timer ticks in user programs. */
-
 /* Scheduling. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
@@ -74,12 +75,14 @@ static void kernel_thread (thread_func *, void *aux);
 static void idle (void *aux UNUSED);
 static struct thread *running_thread (void);
 static struct thread *next_thread_to_run (void);
-static void init_thread (struct thread *, const char *name, int priority);
+static void init_thread (struct thread *, const char *name, int priority, fixed_point_t recent_cpu, int nice);
 static bool is_thread (struct thread *) UNUSED;
 static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
+
+extern fixed_point_t load_avg;
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -97,6 +100,7 @@ static tid_t allocate_tid (void);
 void
 thread_init (void)
 {
+  //ASSERT(false);
   ASSERT (intr_get_level () == INTR_OFF);
 
   lock_init (&tid_lock);
@@ -106,7 +110,8 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
-  init_thread (initial_thread, "main", PRI_DEFAULT);
+  init_thread (initial_thread, "main", PRI_DEFAULT,fix_int(0),0);
+ // init_thread (initial_thread, "main", PRI_DEFAULT); 
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 }
@@ -145,22 +150,10 @@ thread_tick (void)
   else
     kernel_ticks++;
 
-  // Putting the threads_wake() call in the bottom if statement breaks
-  // everything... for some reason (???????) --> Ask Dr. B
-  // we could throw this in schedule() I think? right before all the code that's there?
-  // Ask Dr B. This:
-  /* Since the second part of the project asks us to "immediately yield the processor 
-   to the new thread." in the case of mismatched priority, would moving this wake up check
-   to schedule() be technically incorrect (for cases where the thread to be pushed back
-   has the higher priority), as our code to yield the processor to a new thread
-   (assuming it stays in list_push_back, or somewhere close) wouldn't be called untile schedule()
-   is called (ie not as immediate as it could be) */
-  if(thread_ticks % TIME_SLICE == 0)
-    threads_wake();
-
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return (); //asserts its an external interrupt, sets yield on ret flag to true
+
 }
 
 /* Prints thread statistics. */
@@ -203,8 +196,10 @@ thread_create (const char *name, int priority,
   if (t == NULL)
     return TID_ERROR;
 
-  /* Initialize thread. */
-  init_thread (t, name, priority);
+
+  /* Initialize thread */
+  init_thread (t, name, priority, fix_int(0),1);
+  //init_thread (t, name, priority); //TODO
   tid = t->tid = allocate_tid ();
 
   /* Stack frame for kernel_thread(). */
@@ -223,7 +218,15 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   /* Add to run queue. */
+  
   thread_unblock (t);
+  
+  // adding to ready_list, if this is the highest priority thing, yield!
+  struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
+
+  if(t == firstThr && t->priority > thread_current()->priority)
+    thread_yield();
+  
 
   return tid;
 }
@@ -253,17 +256,29 @@ thread_block (void)
    it may expect that it can atomically unblock a thread and
    update other data. */
 void
-thread_unblock (struct thread *t)
+thread_unblock (struct thread *t) //
 {
   enum intr_level old_level;
-
   ASSERT (is_thread (t));
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+
+  list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
+  //list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
+  
   intr_set_level (old_level);
+}
+/*
+  Return whether the thread passed in is of higher priority
+  than the currently running thread (strictly greater)
+*/
+bool
+is_higher_priority(struct thread* thr)
+{
+  struct thread *cur = thread_current();
+  return thr->priority > cur->priority;
 }
 
 /* Returns the name of the running thread. */
@@ -332,7 +347,10 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread)
-    list_push_back (&ready_list, &cur->elem);
+  {
+    list_insert_ordered (&ready_list, &cur->elem, greater_by_priority, NULL);
+    //list_push_back (&ready_list, &cur->elem);
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -359,7 +377,17 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
+  if(thread_mlfqs) //ignore if using mlfqs
+  {
+    return;
+  }
+  enum intr_level old_level = intr_disable();
   thread_current ()->priority = new_priority;
+  struct thread *firstThr = list_entry(list_begin (&ready_list), struct thread, elem);
+  int highest_priority = firstThr -> priority;
+  intr_set_level(old_level);
+  if (new_priority < highest_priority)
+    thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -371,35 +399,82 @@ thread_get_priority (void)
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED)
+thread_set_nice (int nice)
 {
-  /* Not yet implemented. */
+  if(!thread_mlfqs) 
+    return;
+  enum intr_level old_level = intr_disable();
+  struct thread* cur = thread_current();
+  cur->niceVal = nice;
+  
+  int newPriority = PRI_MAX - (fix_round(cur->recent_cpu)/4) - (nice * 2);
+  if (newPriority < PRI_MIN)
+    cur->priority = PRI_MIN;
+  else if (newPriority > PRI_MAX)
+    cur->priority = PRI_MAX;
+  else
+    cur->priority = newPriority;
+
+  struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
+  int highest_priority = firstThr->priority;
+  
+  intr_set_level(old_level);
+
+  if (cur -> priority < highest_priority)
+    thread_yield();
 }
 
 /* Returns the current thread's nice value. */
 int
 thread_get_nice (void)
 {
-  /* Not yet implemented. */
-  return 0;
+  struct thread* cur = thread_current();
+  return cur->niceVal;
 }
 
 /* Returns 100 times the system load average. */
 int
 thread_get_load_avg (void)
 {
-  /* Not yet implemented. */
-  return 0;
+  fixed_point_t scaledLoad = fix_scale(load_avg,100);
+  return(fix_round(scaledLoad));
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void)
 {
-  /* Not yet implemented. */
-  return 0;
+  fixed_point_t scaledCpu = fix_scale(thread_current()->recent_cpu,100);
+  return(fix_round(scaledCpu));
 }
-
+
+//must be fixed point (load_avg)
+fixed_point_t calc_load_avg(void) 
+{
+  fixed_point_t frac1 = fix_frac(59,60);
+  fixed_point_t frac2 = fix_frac(1,60);
+  fixed_point_t new_load = fix_add(fix_mul(frac1,load_avg),fix_scale(frac2,list_size(&ready_list))); 
+  return(new_load);
+}
+fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice) 
+{
+  fixed_point_t num = fix_scale(load_avg,2);
+  fixed_point_t denom = fix_add(num,fix_int(1));
+  fixed_point_t new_cpu = fix_add(fix_div(num, denom), fix_int(nice)); 
+  return(new_cpu);
+}
+
+void update_recent_cpu(void)
+{
+  struct list_elem *e;
+  for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
+  {
+    struct thread *thr = list_entry(e, struct thread, sleepingelem);
+    thr->recent_cpu = calc_recent_cpu(thr->recent_cpu,thr->niceVal);
+  }
+  list_sort (&ready_list, greater_by_priority, NULL);
+}
+
 /* Idle thread.  Executes when no other thread is ready to run.
 
    The idle thread is initially put on the ready list by
@@ -473,7 +548,8 @@ is_thread (struct thread *t)
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 static void
-init_thread (struct thread *t, const char *name, int priority)
+init_thread (struct thread *t, const char *name, int priority, fixed_point_t recent_cpu, int nice)
+//init_thread (struct thread *t, const char *name, int priority)
 {
   enum intr_level old_level;
 
@@ -485,9 +561,22 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->wakeAt = -1;
+  t->recent_cpu = recent_cpu;
+  t->niceVal = nice;
+  if(!thread_mlfqs) 
+    t->priority = priority;
+  else //calculate priority
+  {
+    int newPriority = PRI_MAX - (fix_round(recent_cpu)/4) - (nice * 2);
+    if (newPriority < PRI_MIN)
+      t->priority = PRI_MIN;
+    else if (newPriority > PRI_MAX)
+      t->priority = PRI_MAX;
+    else
+      t->priority = newPriority;
+  }
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -608,17 +697,25 @@ allocate_tid (void)
 void
 threads_wake(void)
 {
+  ASSERT (intr_get_level () == INTR_OFF);
+  //enum intr_level old_level = intr_disable();//==========================
   struct list_elem *e;
   for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list); e = list_next (e))
   {
     struct thread *thr = list_entry(e, struct thread, sleepingelem);
-    if (thr->wakeAt >= 0 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
+    ASSERT(thr->wakeAt != -1);
+    if (thr->wakeAt != -1 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
     {
-      thr->wakeAt = -1; //reset to default 'not sleeping' val
-      list_remove(e);     // update our sleeping list
-      sema_up(thr->sleepSema); // free sema to save space; we'll reallocate if thr sleeps again
+      thr->wakeAt = -1;
+      // update our sleeping list
+      //list_remove(e);
+      //sema_up(thr->sleepSema); 
+      thread_unblock(thr);
+      list_remove(e);
     }
   }
+
+  ASSERT (intr_get_level () == INTR_OFF);
 }
 
 /* Offset of `stack' member within `struct thread'.

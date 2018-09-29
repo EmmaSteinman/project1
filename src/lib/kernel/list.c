@@ -1,6 +1,7 @@
 #include "list.h"
 #include "../debug.h"
 #include "../../threads/thread.h"
+#include "../../threads/synch.h"
 
 /* Our doubly linked lists have two header elements: the "head"
    just before the first element and the "tail" just after the
@@ -32,7 +33,7 @@
    elements allows us to do a little bit of checking on some
    operations, which can be valuable.) */
 
-extern struct list ready_list;
+//extern struct list ready_list;
 
 static bool is_sorted (struct list_elem *a, struct list_elem *b,
                        list_less_func *less, void *aux) UNUSED;
@@ -219,47 +220,7 @@ list_push_front (struct list *list, struct list_elem *elem)
 void
 list_push_back (struct list *list, struct list_elem *elem)
 {
-  // if list == &ready_list, we care.
-  //    if priority of thread containing elem > priority of currently thread,
-  //    schedule the thread containing elem (Eercise 1.2.1)
-  //    ** I'm not sure if this is where we want to do it. there are two places
-  //        in thread.c where list_push_back is called on read_list, so we could
-  //        employ code there as well. One (implicit) disadvantage of adding it 
-  //        here is that read_list can no longer be static, that is it will be 
-  //		accessible outside of thread.c. (I don't know if this is bad)
-  // if (list == &ready_list)
-  // {
-  //   struct thread *readyThr = list_entry(elem, struct thread, elem);
-  //   struct thread *runningThr = thread_current();
-  //   int readyPriority = readyThr->priority;
-  //   int runningPriority = runningThr->priority;
-  //   if (readyPriority > runningPriority) 
-  //   {
-  //     // make running ready, make ready running
-  //     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  //     // HOW TO DO THIS? 
-  //     /* I think the idea is :
-  //      * push the ready thread into the ready_list
-  //      * make sure it ends up at the front of ready_list
-  //      *    (it'll be the first one out by the current 
-  //      *    FIFO standard)
-  //      * call thread_yield() which will yield the current
-  //      *    thread and get it in the ready list
-  //      * I think it's OK for schedule to be called twice,
-  //      *    (once explicitly by us and once implicitly by
-  //      *    thread_yield()) but I'm not sure so lets run 
-  //      *    this by Dr. B
-  //     */
-  //   } 
-  //   else
-  //   {
-  //     list_insert (list_end (list), elem);
-  //   }
-  // }
-  // else
-  // {
     list_insert (list_end (list), elem);
-  // }
 }
 
 /* Removes ELEM from its list and returns the element that
@@ -485,6 +446,41 @@ list_sort (struct list *list, list_less_func *less, void *aux)
 /* Inserts ELEM in the proper position in LIST, which must be
    sorted according to LESS given auxiliary data AUX.
    Runs in O(n) average case in the number of elements in LIST. */
+bool 
+greater_by_priority(const struct list_elem *a, const struct list_elem *b, void *ignore)
+{
+  struct thread *threadA = list_entry(a, struct thread, elem);
+  struct thread *threadB = list_entry(b, struct thread, elem);
+  return (threadA->priority > threadB->priority);
+}
+
+struct semaphore_elem 
+  {
+    struct list_elem elem;              /* List element. */
+    struct semaphore semaphore;         /* This semaphore. */
+  };
+
+bool
+ASDF(const struct list_elem *a, const struct list_elem *b, void *ignore)
+{
+  struct semaphore_elem *seA = list_entry(a, struct semaphore_elem, elem);
+  struct semaphore_elem *seB = list_entry(b, struct semaphore_elem, elem);
+
+  struct semaphore *sA = &seA->semaphore;
+  struct semaphore *sB = &seB->semaphore;
+
+  struct list *waitersA = &sA->waiters;
+  struct list *waitersB = &sB->waiters;
+
+  struct list_elem *leA = list_begin(waitersA);
+  struct list_elem *leB = list_begin(waitersB);
+
+  struct thread *threadA = list_entry(leA, struct thread, elem);
+  struct thread *threadB = list_entry(leB, struct thread, elem);
+
+  return (threadA->priority > threadB->priority);
+}
+
 void
 list_insert_ordered (struct list *list, struct list_elem *elem,
                      list_less_func *less, void *aux)
@@ -498,7 +494,8 @@ list_insert_ordered (struct list *list, struct list_elem *elem,
   for (e = list_begin (list); e != list_end (list); e = list_next (e))
     if (less (elem, e, aux))
       break;
-  return list_insert (e, elem);
+ // return list_insert (e, elem);
+  list_insert(e,elem);
 }
 
 /* Iterates through LIST and removes all but the first in each
