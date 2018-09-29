@@ -16,6 +16,8 @@
 > If you have any preliminary comments on your submission, notes for the
 > Instructor, or extra credit, please give them here.
 
+We chose to complete Exercise 1.3 - Advanced Scheduler instead of Exercise 1.2.2 - Priority Donation. 
+
 > Please cite any offline or online sources you consulted while
 > preparing your submission, other than the Pintos documentation, course
 > text, lecture notes, and course staff.
@@ -78,6 +80,8 @@ To handle timer interrupts during timer_sleep() we disabled interrupts right bef
 > A6: Why did you choose this design?  In what ways is it superior to
 > another design you considered?
 
+After a few iterations, we finalized our design when it worked. Especially this early in the project we were trying to make our code as efficient as possible. At one point we were iterating over every element in ready_list and checking to see if the wakeAt value was correct, then we realize we could make a sleeping_list to eliminate having to iterate over every thread. We also moved our code from `thread_tick()` to a new function `thread_wake()` which is called in the interrupt handler, as opposed to searching every element in the list when it is just trying to increment `ticks`. We tried different ways of preventing race conditions, many of which did not work. If we had more time we would be able to maximize efficiency more but our solution worked how we wanted it to. 
+
 ### PRIORITY SCHEDULING
 
 #### DATA STRUCTURES
@@ -85,6 +89,8 @@ To handle timer interrupts during timer_sleep() we disabled interrupts right bef
 > B1: Copy here the declaration of each new or changed `struct` or
 > `struct` member, `global` or `static` variable, `typedef`, or
 > enumeration.  Document the purpose of each in 25 words or less.
+
+We did not declare any new `struct` or variables for this exercise. 
 
 > B2: Explain the data structure used to track priority donation.  Provide a diagram showing nested donation, using Markdown include of a jpeg or png.
 
@@ -131,6 +137,12 @@ We kept track of priority and chose to always insert ordered when putting thread
 > `struct` member, `global` or `static` variable, `typedef`, or
 > enumeration.  Document the purpose of each in 25 words or less.
 
+* `fixed_point_t load_avg`
+    * in `timer.c`
+    * we used this to keep track of the load average for use in calculations related to advanced scheduling
+* changed `struct thread`
+    * `int niceVal` holds the niceness value of the thread, related to advanced scheduling 
+    * `fixed_point_t recent_cpu` we use this to keep track of recent cpu usage, used in calculating priority and load average
 * use `typedef struct` (but we did not write)
     * in `fixed-point.h`
     * `int f` keeps track of the fixed point number without wasting space 
