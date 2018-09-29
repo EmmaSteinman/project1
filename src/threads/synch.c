@@ -120,23 +120,12 @@ sema_up (struct semaphore *sema)
     struct thread * readyThr = list_entry(readyElem, struct thread, elem);
     struct thread* curThr = thread_current();
 
-    // if(readyThr->priority > curThr->priority)
-    // {
-    //   thread_yield();
-    // }
-   // thread_unblock (readyThr); 
-
     if(readyThr->priority > curThr->priority)
     {
-      
-      //thread_yield();
+
       flag = 1;
     } 
     thread_unblock (readyThr); 
-
-    // I think priority sema is messed up bc thread unblock is after the yield.
-    // that is, we yield but the only thing waiting is the main thread.
-
   }
   sema->value++;
   if(flag)

@@ -35,7 +35,7 @@ extern struct list sleeping_list;
 fixed_point_t load_avg;
 extern bool thread_mlfqs;
 
-//extern struct fixed_point_t load_avg; ----flagged
+
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
@@ -115,25 +115,11 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
 
   cur->wakeAt = timer_ticks () + ticks;       //set wakeAt so thread "sleeps" and will be
                                       //checked by thread_ticks()
-  //cur->sleepSema = malloc(sizeof(struct semaphore));
- // ASSERT(cur->sleepSema); //trust nobody
-
-  //sema_init(cur->sleepSema, 0);
-
   list_insert_ordered (&sleeping_list, &cur->sleepingelem, greater_by_priority, NULL);
-
-  //list_push_back(&sleeping_list, &cur->sleepingelem); //adds thread to sleeping list --flagged
 
   thread_block();
 
   intr_set_level (old_level); //=========================
-
-  //sema_down(cur->sleepSema); // calling thread is blocked now, we'll come back when time is up
-
-  //list_remove(&cur->sleepingelem);
-
-  //ASSERT(cur->sleepSema);
-  //free(cur->sleepSema);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -221,9 +207,11 @@ timer_interrupt (struct intr_frame *args UNUSED)
     load_avg = calc_load_avg();
   }
 
+  threads_wake ();
+
   if(ticks % 4 == 0)
   {
-    threads_wake ();
+    
     if (thread_mlfqs)
       update_recent_cpu();
   }

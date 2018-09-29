@@ -75,7 +75,7 @@ static void kernel_thread (thread_func *, void *aux);
 static void idle (void *aux UNUSED);
 static struct thread *running_thread (void);
 static struct thread *next_thread_to_run (void);
-static void init_thread (struct thread *, const char *name, int priority, fixed_point_t recent_cpu, int nice); //flagged
+static void init_thread (struct thread *, const char *name, int priority, fixed_point_t recent_cpu, int nice);
 static bool is_thread (struct thread *) UNUSED;
 static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
@@ -110,7 +110,7 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
-  init_thread (initial_thread, "main", PRI_DEFAULT,fix_int(0),0);// --flagged
+  init_thread (initial_thread, "main", PRI_DEFAULT,fix_int(0),0);
  // init_thread (initial_thread, "main", PRI_DEFAULT); 
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
@@ -198,7 +198,7 @@ thread_create (const char *name, int priority,
 
 
   /* Initialize thread */
-  init_thread (t, name, priority, fix_int(0),1); //flagged
+  init_thread (t, name, priority, fix_int(0),1);
   //init_thread (t, name, priority); //TODO
   tid = t->tid = allocate_tid ();
 
@@ -449,14 +449,14 @@ thread_get_recent_cpu (void)
 }
 
 //must be fixed point (load_avg)
-fixed_point_t calc_load_avg(void) //~~~~~~~~flagged added +1
+fixed_point_t calc_load_avg(void) 
 {
   fixed_point_t frac1 = fix_frac(59,60);
   fixed_point_t frac2 = fix_frac(1,60);
   fixed_point_t new_load = fix_add(fix_mul(frac1,load_avg),fix_scale(frac2,list_size(&ready_list))); 
   return(new_load);
 }
-fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice) //~~~~~~~~flagged
+fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice) 
 {
   fixed_point_t num = fix_scale(load_avg,2);
   fixed_point_t denom = fix_add(num,fix_int(1));
@@ -464,7 +464,7 @@ fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice) //~~~~~~~~flag
   return(new_cpu);
 }
 
-void update_recent_cpu(void) //~~~~~~~~~~~~~~~~~~~~~~~flagged
+void update_recent_cpu(void)
 {
   struct list_elem *e;
   for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
@@ -548,7 +548,7 @@ is_thread (struct thread *t)
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 static void
-init_thread (struct thread *t, const char *name, int priority, fixed_point_t recent_cpu, int nice)//flagged
+init_thread (struct thread *t, const char *name, int priority, fixed_point_t recent_cpu, int nice)
 //init_thread (struct thread *t, const char *name, int priority)
 {
   enum intr_level old_level;
@@ -563,7 +563,7 @@ init_thread (struct thread *t, const char *name, int priority, fixed_point_t rec
   t->stack = (uint8_t *) t + PGSIZE;
   t->magic = THREAD_MAGIC;
   t->wakeAt = -1;
-  t->recent_cpu = recent_cpu; //~~~~~~~~~~~~~~flagged
+  t->recent_cpu = recent_cpu;
   t->niceVal = nice;
   if(!thread_mlfqs) 
     t->priority = priority;

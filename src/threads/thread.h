@@ -97,9 +97,6 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     struct list_elem sleepingelem;
-    
-    struct semaphore *sleepSema;        /* Used exclusively for blocking/unblocking
-                                          a sleeping thread */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -149,8 +146,8 @@ int thread_get_load_avg (void);
 void threads_wake(void);
 bool is_higher_priority(struct thread*);
 
-fixed_point_t calc_load_avg(void); //~~~~~~~~flagged
-fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice); //~~~~~flagged
-void update_recent_cpu(void); //~~~~~~~~~~~~~~~~~~~~~~~flagged
+fixed_point_t calc_load_avg(void);
+fixed_point_t calc_recent_cpu(fixed_point_t recent_cpu, int nice); 
+void update_recent_cpu(void); 
 
 #endif /* threads/thread.h */
