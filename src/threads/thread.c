@@ -221,7 +221,9 @@ thread_create (const char *name, int priority,
   
   thread_unblock (t);
   
+  // adding to ready_list, if this is the highest priority thing, yield!
   struct thread * firstThr = list_entry(list_begin(&ready_list), struct thread, elem);
+
   if(t == firstThr && t->priority > thread_current()->priority)
     thread_yield();
   
@@ -265,11 +267,8 @@ thread_unblock (struct thread *t) //
   list_insert_ordered (&ready_list, &t->elem, greater_by_priority, NULL);
   //list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
-
-  // Dr. B says we have to be yielding here!! 
   
   intr_set_level (old_level);
-  
 }
 /*
   Return whether the thread passed in is of higher priority
@@ -705,15 +704,16 @@ threads_wake(void)
   {
     struct thread *thr = list_entry(e, struct thread, sleepingelem);
     ASSERT(thr->wakeAt != -1);
-    if (thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
+    if (thr->wakeAt != -1 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
     {
-      //thr->wakeAt = -1;     // update our sleeping list
+      thr->wakeAt = -1;
+      // update our sleeping list
       //list_remove(e);
-      sema_up(thr->sleepSema); 
+      //sema_up(thr->sleepSema); 
+      thread_unblock(thr);
       list_remove(e);
     }
   }
-
 
   ASSERT (intr_get_level () == INTR_OFF);
 }
