@@ -121,6 +121,8 @@ A potential race condition in thread_set_priority is if an interrupt comes after
 > B7: Why did you choose this design?  In what ways is it superior to
 > another design you considered?
 
+We kept track of priority and chose to always insert ordered when putting threads in the ready list, thus the first element will always have the highest priority and we do not have to iterate over the list each time to find the highest priority. We chose to complete the Advanced Scheduler exercise rather than Priority Donation. 
+
 ### ADVANCED SCHEDULER
 
 #### DATA STRUCTURES
@@ -168,12 +170,16 @@ There were a few ambiguities that made values in the table uncertain.
 > C4: How is the way you divided the cost of scheduling between code
 > inside and outside interrupt context likely to affect performance?
 
+When we were deciding what to include inside interrupt context vs outside interrupt context, we agreed that safety was better than efficiency for our project. However, in professional coding it is better to maximize efficiency rather than focus only on safety. Our code might be less efficient thus running slightly slower than a program that balanced code between inside and outside interrupt context. 
+
 #### RATIONALE
 
 > C5: Briefly critique your design, pointing out advantages and
 > disadvantages in your design choices.  If you were to have extra
 > time to work on this part of the project, how might you choose to
 > refine or improve your design?
+
+Besides making sure it passes all of the tests, we would have focused more on the design and efficiency of the program. Advantages of our design was the fact that we were passing tests intuitively, but disadvantages were the lack of efficiency and overarching design. If we had more time we would have made sure the code worked to our standards. 
 
 > C6: The assignment explains arithmetic for fixed-point math in
 > detail, but it leaves it open to you to implement it.  Why did you
@@ -182,4 +188,4 @@ There were a few ambiguities that made values in the table uncertain.
 > type and/or a set of functions or macros to manipulate fixed-point
 > numbers, why did you do so?  If not, why not?
 
-We chose to use the .h file given to us to implement fixed-point math. If we had more time we could have written our own but we used it to save time and focus more on the scheduling part of the exercise. DESCRIBE FUNCTIONS?
+We chose to use the .h file given to us to implement fixed-point math. If we had more time we could have written our own but we used it to save time and focus more on the scheduling part of the exercise. 
