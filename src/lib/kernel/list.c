@@ -494,26 +494,32 @@ greater_by_priority(const struct list_elem *a, const struct list_elem *b, void *
   return (threadA->priority > threadB->priority);
 }
 
-// bool
-// greater_by_priority_cond(const struct list_elem *a, const struct list_elem *b, void *ignore)
-// {
-//   struct semaphore_elem *seA = list_entry(a, struct semaphore_elem, elem);
-//   struct semaphore_elem *seB = list_entry(b, struct semaphore_elem, elem);
+struct semaphore_elem 
+  {
+    struct list_elem elem;              /* List element. */
+    struct semaphore semaphore;         /* This semaphore. */
+  };
 
-//   struct semaphore *sA = seA->semaphore;
-//   struct semaphore *sB = seB->semaphore;
+bool
+greater_by_priority_cond(const struct list_elem *a, const struct list_elem *b, void *ignore)
+{
+  struct semaphore_elem *seA = list_entry(a, struct semaphore_elem, elem);
+  struct semaphore_elem *seB = list_entry(b, struct semaphore_elem, elem);
 
-//   struct list *waitersA = &sA->waiters;
-//   struct list *waitersB = &sB->waiters;
+  struct semaphore *sA = &seA->semaphore;
+  struct semaphore *sB = &seB->semaphore;
 
-//   struct list_elem *leA = list_begin(waitersA);
-//   struct list_elem *leB = list_begin(waitersB);
+  struct list *waitersA = &sA->waiters;
+  struct list *waitersB = &sB->waiters;
 
-//   struct thread *threadA = list_entry(leA, struct thread, elem);
-//   struct thread *threadB = list_entry(leB, struct thread, elem);
+  struct list_elem *leA = list_begin(waitersA);
+  struct list_elem *leB = list_begin(waitersB);
 
-//   return (threadA->priority > threadB->priority);
-// }
+  struct thread *threadA = list_entry(leA, struct thread, elem);
+  struct thread *threadB = list_entry(leB, struct thread, elem);
+
+  return (threadA->priority > threadB->priority);
+}
 
 void
 list_insert_ordered (struct list *list, struct list_elem *elem,

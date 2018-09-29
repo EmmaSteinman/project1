@@ -310,6 +310,7 @@ cond_init (struct condition *cond)
    interrupt handler.  This function may be called with
    interrupts disabled, but interrupts will be turned back on if
    we need to sleep. */
+
 void
 cond_wait (struct condition *cond, struct lock *lock) 
 {
@@ -322,14 +323,22 @@ cond_wait (struct condition *cond, struct lock *lock)
   
   sema_init (&waiter.semaphore, 0);
   //list_insert_ordered (&sema->waiters, &thread_current ()->elem, greater_by_priority, NULL);
+  
+  //list_insert_ordered (&cond->waiters, &waiter.elem, greater_by_priority_cond, NULL);
   struct semaphore *sema = &waiter.semaphore;
   struct list *waiters = &sema->waiters;
   struct list_elem *e = list_front(waiters);
-  //list_insert_ordered (&cond->waiters, &waiter.elem, greater_by_priority_cond, NULL);
   list_insert_ordered (&cond->waiters, e, greater_by_priority, NULL);
+
+
   lock_release (lock);
   sema_down (&waiter.semaphore);
   lock_acquire (lock);
+
+  // struct semaphore *sema = &waiter.semaphore;
+  // struct list *waiters = &sema->waiters;
+  // struct list_elem *e = list_front(waiters);
+  //list_insert_ordered (&cond->waiters, e, greater_by_priority, NULL);
 }
 
 /* If any threads are waiting on COND (protected by LOCK), then
