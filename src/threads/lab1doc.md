@@ -32,21 +32,18 @@
 > `struct` member, `global` or `static` variable, `typedef`, or
 > enumeration.  Document the purpose of each in 25 words or less.
 
-*`(extern) struct list sleeping_list;`
- *timer.c and thread.h
- *keep track of the sleeping threads to make it more efficient when checking which threads to wake up in timer_interrupt()
-*```struct thread
-{ 
- int64_t wakeAt;
- struct list_elem sleepingelem;
- struct semaphore *sleepSema;
- }```
- *thread.h
- *wakeAt is the value at which to wake the thread, -1 if not sleeping
- *sleepingelem is a struct to keep track of an element in sleepingList
- *sleepSema is a semaphore to prevent race conditions when sleeping 
-*`extern struct ready_list;`
- *declare as an extern struct to make it global
+ * `(extern) struct list sleeping_list;`
+     * timer.c and thread.h
+     * keep track of the sleeping threads to make it more efficient when checking which threads to wake up in timer_interrupt()
+
+*  additions to `struct thread`
+    * thread.h
+    * `int64_t wakeAt` is the value at which to wake the thread, -1 if not sleeping
+    * `struct list_elem sleepingelem` is a struct to keep track of an element in sleepingList
+    * `struct semaphore *sleepSema` is a semaphore to prevent race conditions when sleeping 
+* `extern struct ready_list;`
+   * list.c
+   * declare as an extern struct to make it global
 
 
 
