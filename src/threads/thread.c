@@ -473,6 +473,7 @@ void update_recent_cpu(void) //~~~~~~~~~~~~~~~~~~~~~~~flagged
     struct thread *thr = list_entry(e, struct thread, sleepingelem);
     thr->recent_cpu = calc_recent_cpu(thr->recent_cpu,thr->niceVal);
   }
+  list_sort (&ready_list, greater_by_priority, NULL);
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.

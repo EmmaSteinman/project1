@@ -33,6 +33,7 @@ static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 extern struct list sleeping_list;
 fixed_point_t load_avg;
+extern bool thread_mlfqs;
 
 //extern struct fixed_point_t load_avg; ----flagged
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
@@ -204,17 +205,20 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ASSERT (intr_get_level () == INTR_OFF);
   ticks++;
 
-  if (thread_current()->name != "idle")
+  if (thread_current()->name != "idle" && thread_mlfqs)
     thread_current()->recent_cpu = fix_add(thread_current()->recent_cpu,fix_int(1)); //~~~~~~~~~flagged
 
-  if(ticks % TIMER_FREQ == 0) //~~~~~~~~~~~~~~~~~~~~flagged
+  if(ticks % TIMER_FREQ == 0 && thread_mlfqs) //~~~~~~~~~~~~~~~~~~~~flagged
   {
     load_avg = calc_load_avg();
-    update_recent_cpu();
   }
 
   if(ticks % 5 == 0)
+  {
     threads_wake ();
+    if (thread_mlfqs)
+      update_recent_cpu();
+  }
   thread_tick ();
   ASSERT (intr_get_level () == INTR_OFF);
 }
