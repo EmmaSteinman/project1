@@ -112,7 +112,7 @@ sema_up (struct semaphore *sema)
   enum intr_level old_level;
 
   ASSERT (sema != NULL);
-
+  bool flag = 0;
   old_level = intr_disable ();
   if (!list_empty (&sema->waiters)) 
   {
@@ -120,14 +120,29 @@ sema_up (struct semaphore *sema)
     struct thread * readyThr = list_entry(readyElem, struct thread, elem);
     struct thread* curThr = thread_current();
 
+    // if(readyThr->priority > curThr->priority)
+    // {
+    //   thread_yield();
+    // }
+   // thread_unblock (readyThr); 
+
     if(readyThr->priority > curThr->priority)
     {
-      thread_yield();
-    }
+      
+      //thread_yield();
+      flag = 1;
+    } 
+    thread_unblock (readyThr); 
 
-    thread_unblock (readyThr);   
+    // I think priority sema is messed up bc thread unblock is after the yield.
+    // that is, we yield but the only thing waiting is the main thread.
+
   }
   sema->value++;
+  if(flag)
+  {
+    thread_yield();
+  }
   intr_set_level (old_level);
 }
 
