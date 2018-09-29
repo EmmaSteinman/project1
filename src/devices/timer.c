@@ -108,25 +108,26 @@ timer_sleep (int64_t ticks) // 1 tick = 1/100th of a second
   enum intr_level old_level = intr_disable();//==========================
 
   struct thread *cur = thread_current();
-  //int64_t start = timer_ticks ();
+  int64_t start = timer_ticks ();
   cur->wakeAt = timer_ticks () + ticks;       //set wakeAt so thread "sleeps" and will be
                                       //checked by thread_ticks()
-  cur->sleepSema = malloc(sizeof(struct semaphore));
-  ASSERT(cur->sleepSema); //trust nobody
+  //cur->sleepSema = malloc(sizeof(struct semaphore));
+ // ASSERT(cur->sleepSema); //trust nobody
 
-  sema_init(cur->sleepSema, 0);
+  //sema_init(cur->sleepSema, 0);
 
   list_insert_ordered (&sleeping_list, &cur->sleepingelem, greater_by_priority, NULL);
   //list_push_back(&sleeping_list, &cur->sleepingelem); //adds thread to sleeping list --flagged
 
+  thread_block();
   intr_set_level (old_level); //=========================
 
-  sema_down(cur->sleepSema); // calling thread is blocked now, we'll come back when time is up
+  //sema_down(cur->sleepSema); // calling thread is blocked now, we'll come back when time is up
 
   //list_remove(&cur->sleepingelem);
 
-  ASSERT(cur->sleepSema);
-  free(cur->sleepSema);
+  //ASSERT(cur->sleepSema);
+  //free(cur->sleepSema);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -207,7 +208,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   
   //if(ticks % 5 == 0)
-    threads_wake();
+  threads_wake();
 
   thread_tick ();
   ASSERT (intr_get_level () == INTR_OFF);

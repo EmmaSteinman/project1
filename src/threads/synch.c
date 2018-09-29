@@ -119,6 +119,12 @@ sema_up (struct semaphore *sema)
     struct list_elem *readyElem = list_pop_front(&sema->waiters); //GOOD
     struct thread * readyThr = list_entry(readyElem, struct thread, elem);
     struct thread* curThr = thread_current();
+
+    if(readyThr->priority > curThr->priority)
+    {
+      thread_yield();
+    }
+
     thread_unblock (readyThr);   
   }
   sema->value++;

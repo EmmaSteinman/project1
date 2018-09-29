@@ -652,11 +652,13 @@ threads_wake()
   {
     struct thread *thr = list_entry(e, struct thread, sleepingelem);
     ASSERT(thr->wakeAt != -1);
-    if (thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
+    if (thr->wakeAt != -1 && thr->wakeAt <= timer_ticks()) // thread is asleep AND enough time to wake
     {
+      thr->wakeAt = -1;
       // update our sleeping list
       //list_remove(e);
-      sema_up(thr->sleepSema); 
+      //sema_up(thr->sleepSema); 
+      thread_unblock(thr);
       list_remove(e);
     }
   }
