@@ -52,10 +52,12 @@
 > A2: Briefly describe the algorithmic flow for a call to `timer_sleep()`,
 > including the effects of the timer interrupt handler.
 
-Timer_sleep() gets the current thread and sets it’s wakeAt value to the absolute time it should wake up. It then sets the sleepSema member to a semaphore initialized to 0 and disables interrupts before pushing the thread onto the sleepingList. Then it calls sema_down() which blocks the thread and reenables interrupts. Timer_interrupt(), which is called every tick, threads_wake is called which iterates through each element currently in the sleeping list. If the thread’s wakeAt value is less than or equal to the total number of ticks, it is time to wake up the thread so the thread is removed from sleepingList and sema_up() is called on the thread’s sleepSema. The thread is unblocked and if it’s priority is higher than the next thread to run, thread_yield() is called, running this thread instead. 
+`timer_sleep()` gets the current thread and sets it’s `wakeAt` value to the absolute time it should wake up. It then disables interrupts before pushing the thread onto the `sleepingList`. Then it calls `thread_block()` which blocks the thread and reenables interrupts. `timer_interrupt()`, which is called every tick, calls `threads_wake()` which iterates through each element currently in the sleeping list. If the thread’s `wakeAt` value is less than or equal to the total number of ticks, it is time to wake up the thread so the thread is removed from `sleepingList` and the thread is unblocked. If it’s priority is higher than the next thread to run, `thread_yield()` is called, running this thread instead. 
 
 > A3: What steps are taken to minimize the amount of time spent in
 > the timer interrupt handler?
+
+By creating `sleepingList`, we minimize the time it takes to iterate through to find the threads that are sleeping, as opposed to iterating through all of the threads and checking their `wakeAt` values.
 
 #### SYNCHRONIZATION
 
@@ -63,6 +65,8 @@ Timer_sleep() gets the current thread and sets it’s wakeAt value to the absolu
 
 > A4: How are race conditions avoided when multiple threads call
 > `timer_sleep()` simultaneously?
+
+By disabling interrupts momentarily (while the thread is inserted into `sleepingList` and blocked) even if other threads call `timer_sleep()` the running thread will be able to finish the critical section atomically. 
 
 > A5: How are race conditions avoided when a timer interrupt occurs
 > during a call to `timer_sleep()`?
@@ -84,6 +88,9 @@ To handle timer interrupts during timer_sleep() we disabled interrupts right bef
 
 > B2: Explain the data structure used to track priority donation.  Provide a diagram showing nested donation, using Markdown include of a jpeg or png.
 
+We chose to complete the Advanced Scheduler exercise instead of priority donation.
+
+
 #### ALGORITHMS
 
 > B3: How do you ensure that the highest priority thread waiting for
@@ -99,7 +106,7 @@ We chose to complete the Advanced Scheduler exercise instead of priority donatio
 > B5: Describe the sequence of events when `lock_release()` is called
 > on a lock that a higher-priority thread is waiting for.
 
-????
+We chose to complete the Advanced Scheduler exercise instead of priority donation.
 
 #### SYNCHRONIZATION
 
@@ -122,6 +129,9 @@ A potential race condition in thread_set_priority is if an interrupt comes after
 > `struct` member, `global` or `static` variable, `typedef`, or
 > enumeration.  Document the purpose of each in 25 words or less.
 
+* use `typedef struct` (but we did not write)
+    * in `fixed-point.h`
+    * `int f` keeps track of the fixed point number without wasting space 
 #### ALGORITHMS
 
 > C2: Suppose threads A, B, and C have "nice" values 0, 1, and 2, respectively.  Each
@@ -150,7 +160,7 @@ ticks |  cpu A | cpu B | cpu C | pri A | pri B | pri C  | thread-to-run
 There were a few ambiguities that made values in the table uncertain.
   * How often to recalculate load_avg?
     * If the load_avg is not reset often enough, no values change. Here we decided to recalculate every 12 ticks to better demonstrate how niceness affects priority and thus recent_cpu. 
-    *In our scheduler we recalculate load_avg every 100 ticks, because there are more threads and more happening per tick 
+    * In our scheduler we recalculate load_avg every 100 ticks, because there are more threads and more happening per tick 
   * How does it decide which thread to run?
     * Here, we used highest priority to decide which thread runs next because we do not know the order of arrival or time to completion or any other metric other than priority.
     * This is not good in this simulation because it leads to starvation as thread A has a niceness of 0 and it's priority never changes as the priorities of both thread B and thread C slowly decrease, thus thread B and thread C do not get to run.
@@ -171,3 +181,5 @@ There were a few ambiguities that made values in the table uncertain.
 > abstraction layer for fixed-point math, that is, an abstract data
 > type and/or a set of functions or macros to manipulate fixed-point
 > numbers, why did you do so?  If not, why not?
+
+We chose to use the .h file given to us to implement fixed-point math. If we had more time we could have written our own but we used it to save time and focus more on the scheduling part of the exercise. DESCRIBE FUNCTIONS?
