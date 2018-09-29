@@ -7,9 +7,9 @@
 
 > Fill in the name and email addresses of your group members.
 
-- FirstName LastName <email@denison.edu>
+- Ben Liepert <lieper_b1@denison.edu>
 - Federico Read Grullon <readgr_r1@denison.edu>
-- FirstName LastName <email@denison.edu>
+- Emma Steinman <steinm_e1@denison.edu>
 
 ## PRELIMINARIES
 
@@ -36,6 +36,7 @@
 
 > A2: Briefly describe the algorithmic flow for a call to `timer_sleep()`,
 > including the effects of the timer interrupt handler.
+Timer_sleep() gets the current thread and sets it’s wakeAt value to the absolute time it should wake up. It then sets the sleepSema member to a semaphore initialized to 0 and disables interrupts before pushing the thread onto the sleepingList. Then it calls sema_down() which blocks the thread and reenables interrupts. Timer_interrupt(), which is called every tick, threads_wake is called which iterates through each element currently in the sleeping list. If the thread’s wakeAt value is less than or equal to the total number of ticks, it is time to wake up the thread so the thread is removed from sleepingList and sema_up() is called on the thread’s sleepSema. The thread is unblocked and if it’s priority is higher than the next thread to run, thread_yield() is called, running this thread instead. 
 
 > A3: What steps are taken to minimize the amount of time spent in
 > the timer interrupt handler?
